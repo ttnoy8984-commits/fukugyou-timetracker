@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppData } from "@/lib/useAppData";
+import { loadSeedData } from "@/lib/seed";
 import Timer from "@/components/Timer";
 import ProjectManager from "@/components/ProjectManager";
 import EntryLog from "@/components/EntryLog";
@@ -24,6 +25,13 @@ export default function Home() {
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
+  const [showSeed, setShowSeed] = useState(false);
+
+  function handleLoadSeed() {
+    const d = loadSeedData();
+    window.location.reload();
+    void d;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f8f7]">
@@ -33,16 +41,36 @@ export default function Home() {
           <div>
             <h1 className="text-lg font-semibold text-gray-900 tracking-tight">副業タイムトラッカー</h1>
           </div>
-          {activeEntry && (
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-gray-900 rounded-full animate-pulse" />
-              <span className="text-sm font-mono text-gray-700">
-                {String(Math.floor(elapsed / 3600)).padStart(2, "0")}:
-                {String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:
-                {String(elapsed % 60).padStart(2, "0")}
-              </span>
+          <div className="flex items-center gap-3">
+            {activeEntry && (
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gray-900 rounded-full animate-pulse" />
+                <span className="text-sm font-mono text-gray-700">
+                  {String(Math.floor(elapsed / 3600)).padStart(2, "0")}:
+                  {String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:
+                  {String(elapsed % 60).padStart(2, "0")}
+                </span>
+              </div>
+            )}
+            <div className="relative">
+              <button
+                onClick={() => setShowSeed(!showSeed)}
+                className="text-xs text-gray-300 hover:text-gray-500 transition-colors"
+              >
+                ⋯
+              </button>
+              {showSeed && (
+                <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-50 w-44">
+                  <button
+                    onClick={handleLoadSeed}
+                    className="w-full text-left text-xs text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    サンプルデータを読み込む
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </header>
 
