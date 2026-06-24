@@ -5,7 +5,8 @@ import { formatDuration } from "@/lib/storage";
 
 interface ProjectSummary {
   seconds: number;
-  earnings: number;
+  contractAmount: number;
+  effectiveRate: number;
   name: string;
   color: string;
 }
@@ -25,7 +26,7 @@ export default function MonthlyReport({ getMonthlySummary }: Props) {
   const { byProject } = getMonthlySummary(year, month);
   const rows = Object.values(byProject);
   const totalSeconds = rows.reduce((s, r) => s + r.seconds, 0);
-  const totalEarnings = rows.reduce((s, r) => s + r.earnings, 0);
+  const totalContract = rows.reduce((s, r) => s + r.contractAmount, 0);
 
   const years = [now.getFullYear() - 1, now.getFullYear()];
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -59,12 +60,12 @@ export default function MonthlyReport({ getMonthlySummary }: Props) {
           {/* 合計 */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100 flex justify-between items-center">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">合計時間</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">合計作業時間</p>
               <p className="text-3xl font-mono font-light text-gray-900">{formatDuration(totalSeconds)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">合計報酬</p>
-              <p className="text-3xl font-light text-gray-900">¥{Math.round(totalEarnings).toLocaleString()}</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">契約金額合計</p>
+              <p className="text-3xl font-light text-gray-900">¥{Math.round(totalContract).toLocaleString()}</p>
             </div>
           </div>
 
@@ -83,7 +84,7 @@ export default function MonthlyReport({ getMonthlySummary }: Props) {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-mono text-gray-500">{formatDuration(r.seconds)}</span>
-                      <span className="text-sm text-gray-800">¥{Math.round(r.earnings).toLocaleString()}</span>
+                      <span className="text-sm text-gray-800">実質 ¥{Math.round(r.effectiveRate).toLocaleString()}/h</span>
                     </div>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-1">

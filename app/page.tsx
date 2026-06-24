@@ -20,7 +20,7 @@ export default function Home() {
   const {
     data, activeEntry, elapsed,
     addProject, deleteProject, addTask,
-    startTimer, stopTimer, deleteEntry, getMonthlySummary,
+    startTimer, stopTimer, deleteEntry, getProjectTotalSeconds, getMonthlySummary,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -84,6 +84,7 @@ export default function Home() {
             onAddProject={addProject}
             onDeleteProject={deleteProject}
             onAddTask={addTask}
+            getProjectTotalSeconds={getProjectTotalSeconds}
           />
         )}
         {tab === "log" && (

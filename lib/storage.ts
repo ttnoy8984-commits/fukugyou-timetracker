@@ -18,11 +18,11 @@ export function saveData(data: AppData): void {
   localStorage.setItem(KEY, JSON.stringify(data));
 }
 
-export function createProject(name: string, hourlyRate: number, color: string): Project {
+export function createProject(name: string, contractAmount: number, color: string): Project {
   return {
     id: crypto.randomUUID(),
     name,
-    hourlyRate,
+    contractAmount,
     color,
     createdAt: new Date().toISOString(),
   };
@@ -62,6 +62,7 @@ export function formatDuration(seconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function calcEarnings(seconds: number, hourlyRate: number): number {
-  return (seconds / 3600) * hourlyRate;
+export function calcEffectiveHourlyRate(totalSeconds: number, contractAmount: number): number {
+  if (totalSeconds === 0) return 0;
+  return contractAmount / (totalSeconds / 3600);
 }

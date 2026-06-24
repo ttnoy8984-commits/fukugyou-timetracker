@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AppData, Project, Task, TimeEntry } from "./types";
+import { AppData, TimeEntry } from "./types";
 import {
-  calcEarnings,
+  calcEffectiveHourlyRate,
   createEntry,
   createProject,
   createTask,
@@ -19,20 +19,17 @@ export function useAppData() {
   useEffect(() => {
     const d = loadData();
     setData(d);
-    // Restore in-progress entry
     const running = d.entries.find((e) => e.endTime === null);
     if (running) {
       setActiveEntry(running);
-      const start = new Date(running.startTime).getTime();
-      setElapsed(Math.floor((Date.now() - start) / 1000));
+      setElapsed(Math.floor((Date.now() - new Date(running.startTime).getTime()) / 1000));
     }
   }, []);
 
   useEffect(() => {
     if (!activeEntry) return;
     const id = setInterval(() => {
-      const start = new Date(activeEntry.startTime).getTime();
-      setElapsed(Math.floor((Date.now() - start) / 1000));
+      setElapsed(Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000));
     }, 1000);
     return () => clearInterval(id);
   }, [activeEntry]);
@@ -43,8 +40,8 @@ export function useAppData() {
   }, []);
 
   const addProject = useCallback(
-    (name: string, hourlyRate: number, color: string) => {
-      const p = createProject(name, hourlyRate, color);
+    (name: string, contractAmount: number, color: string) => {
+      const p = createProject(name, contractAmount, color);
       persist({ ...data, projects: [...data.projects, p] });
       return p;
     },
@@ -75,8 +72,7 @@ export function useAppData() {
     (projectId: string, taskId: string, note: string) => {
       if (activeEntry) return;
       const entry = createEntry(projectId, taskId, note);
-      const next = { ...data, entries: [...data.entries, entry] };
-      persist(next);
+      persist({ ...data, entries: [...data.entries, entry] });
       setActiveEntry(entry);
       setElapsed(0);
     },
@@ -86,11 +82,9 @@ export function useAppData() {
   const stopTimer = useCallback(() => {
     if (!activeEntry) return;
     const now = new Date().toISOString();
-    const start = new Date(activeEntry.startTime).getTime();
-    const duration = Math.floor((Date.now() - start) / 1000);
+    const duration = Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000);
     const updated = { ...activeEntry, endTime: now, durationSeconds: duration };
-    const entries = data.entries.map((e) => (e.id === activeEntry.id ? updated : e));
-    persist({ ...data, entries });
+    persist({ ...data, entries: data.entries.map((e) => (e.id === activeEntry.id ? updated : e)) });
     setActiveEntry(null);
     setElapsed(0);
   }, [activeEntry, data, persist]);
@@ -102,22 +96,42 @@ export function useAppData() {
     [data, persist]
   );
 
-  // Monthly summary
+  // 案件ごとの合計作業時間を返す
+  const getProjectTotalSeconds = useCallback(
+    (projectId: string) => {
+      return data.entries
+        .filter((e) => e.projectId === projectId && e.endTime !== null)
+        .reduce((sum, e) => sum + e.durationSeconds, 0);
+    },
+    [data]
+  );
+
+  // 月次集計（案件ごとの作業時間＋実質時給）
   const getMonthlySummary = useCallback(
     (year: number, month: number) => {
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
       const monthEntries = data.entries.filter(
         (e) => e.date.startsWith(prefix) && e.endTime !== null
       );
-      const byProject: Record<string, { seconds: number; earnings: number; name: string; color: string }> = {};
+      const byProject: Record<string, { seconds: number; contractAmount: number; effectiveRate: number; name: string; color: string }> = {};
       for (const e of monthEntries) {
         const project = data.projects.find((p) => p.id === e.projectId);
         if (!project) continue;
         if (!byProject[e.projectId]) {
-          byProject[e.projectId] = { seconds: 0, earnings: 0, name: project.name, color: project.color };
+          byProject[e.projectId] = {
+            seconds: 0,
+            contractAmount: project.contractAmount,
+            effectiveRate: 0,
+            name: project.name,
+            color: project.color,
+          };
         }
         byProject[e.projectId].seconds += e.durationSeconds;
-        byProject[e.projectId].earnings += calcEarnings(e.durationSeconds, project.hourlyRate);
+      }
+      // 実質時給を計算
+      for (const key of Object.keys(byProject)) {
+        const row = byProject[key];
+        row.effectiveRate = calcEffectiveHourlyRate(row.seconds, row.contractAmount);
       }
       return { byProject, entries: monthEntries };
     },
@@ -134,6 +148,7 @@ export function useAppData() {
     startTimer,
     stopTimer,
     deleteEntry,
+    getProjectTotalSeconds,
     getMonthlySummary,
   };
 }

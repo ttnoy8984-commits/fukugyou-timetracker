@@ -1,7 +1,7 @@
 "use client";
 
 import { Project, Task, TimeEntry } from "@/lib/types";
-import { calcEarnings, formatDuration } from "@/lib/storage";
+import { formatDuration } from "@/lib/storage";
 
 interface Props {
   entries: TimeEntry[];
@@ -33,7 +33,6 @@ export default function EntryLog({ entries, projects, tasks, onDelete }: Props) 
         {completed.map((e) => {
           const project = projects.find((p) => p.id === e.projectId);
           const task = tasks.find((t) => t.id === e.taskId);
-          const earnings = project ? calcEarnings(e.durationSeconds, project.hourlyRate) : 0;
           return (
             <div key={e.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color ?? "#ccc" }} />
@@ -47,7 +46,6 @@ export default function EntryLog({ entries, projects, tasks, onDelete }: Props) 
               </div>
               <div className="text-right flex-shrink-0">
                 <div className="text-sm font-mono text-gray-700">{formatDuration(e.durationSeconds)}</div>
-                <div className="text-xs text-gray-500 mt-0.5">¥{Math.round(earnings).toLocaleString()}</div>
               </div>
               <button
                 onClick={() => onDelete(e.id)}

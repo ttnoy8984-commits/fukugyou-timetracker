@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { Project, Task } from "@/lib/types";
+import { calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
 interface Props {
   projects: Project[];
   tasks: Task[];
-  onAddProject: (name: string, hourlyRate: number, color: string) => void;
+  onAddProject: (name: string, contractAmount: number, color: string) => void;
   onDeleteProject: (id: string) => void;
   onAddTask: (projectId: string, name: string) => void;
+  getProjectTotalSeconds: (projectId: string) => number;
 }
 
-export default function ProjectManager({ projects, tasks, onAddProject, onDeleteProject, onAddTask }: Props) {
+export default function ProjectManager({ projects, tasks, onAddProject, onDeleteProject, onAddTask, getProjectTotalSeconds }: Props) {
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
   const [color, setColor] = useState("#1a1a1a");
@@ -46,7 +48,7 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
           <input
             value={rate}
             onChange={(e) => setRate(e.target.value)}
-            placeholder="時給（円）"
+            placeholder="契約金額（円）"
             type="number"
             className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           />
@@ -107,6 +109,8 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
           </div>
           {projects.map((p, i) => {
             const projectTasks = tasks.filter((t) => t.projectId === p.id);
+            const totalSeconds = getProjectTotalSeconds(p.id);
+            const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
             return (
               <div key={p.id} className={i > 0 ? "border-t border-gray-100" : ""}>
                 <div
@@ -114,8 +118,20 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
                   onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
                 >
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                  <span className="text-sm font-medium text-gray-800 flex-1">{p.name}</span>
-                  <span className="text-sm text-gray-400">¥{p.hourlyRate.toLocaleString()}/h</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-800">{p.name}</div>
+                    <div className="text-xs text-gray-400">契約 ¥{p.contractAmount.toLocaleString()}</div>
+                  </div>
+                  <div className="text-right">
+                    {totalSeconds > 0 ? (
+                      <>
+                        <div className="text-sm text-gray-700">実質 ¥{Math.round(effectiveRate).toLocaleString()}/h</div>
+                        <div className="text-xs text-gray-400">{formatDuration(totalSeconds)}</div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-gray-400">未作業</div>
+                    )}
+                  </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteProject(p.id); }}
                     className="text-gray-300 hover:text-red-400 text-xs transition-colors ml-2"

@@ -1,7 +1,7 @@
 export interface Project {
   id: string;
   name: string;
-  hourlyRate: number;
+  contractAmount: number;
   color: string;
   createdAt: string;
 }
