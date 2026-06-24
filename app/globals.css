@@ -30,5 +30,9 @@ input, select, textarea {
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  color: #9ca3af !important;
+  color: #6b7280 !important;
+}
+
+input, select, textarea {
+  background-color: #ffffff !important;
 }
