@@ -89,6 +89,26 @@ export function useAppData() {
     setElapsed(0);
   }, [activeEntry, data, persist]);
 
+  const addManualEntry = useCallback(
+    (projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
+      const startISO = new Date(`${date}T${startTime}`).toISOString();
+      const endISO = new Date(`${date}T${endTime}`).toISOString();
+      const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
+      const entry = {
+        id: crypto.randomUUID(),
+        projectId,
+        taskId,
+        startTime: startISO,
+        endTime: endISO,
+        durationSeconds,
+        note,
+        date,
+      };
+      persist({ ...data, entries: [...data.entries, entry] });
+    },
+    [data, persist]
+  );
+
   const deleteEntry = useCallback(
     (id: string) => {
       persist({ ...data, entries: data.entries.filter((e) => e.id !== id) });
@@ -148,6 +168,7 @@ export function useAppData() {
     startTimer,
     stopTimer,
     deleteEntry,
+    addManualEntry,
     getProjectTotalSeconds,
     getMonthlySummary,
   };

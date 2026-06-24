@@ -20,7 +20,7 @@ export default function Home() {
   const {
     data, activeEntry, elapsed,
     addProject, deleteProject, addTask,
-    startTimer, stopTimer, deleteEntry, getProjectTotalSeconds, getMonthlySummary,
+    startTimer, stopTimer, addManualEntry, deleteEntry, getProjectTotalSeconds, getMonthlySummary,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -75,6 +75,7 @@ export default function Home() {
             elapsed={elapsed}
             onStart={startTimer}
             onStop={stopTimer}
+            onManualAdd={addManualEntry}
           />
         )}
         {tab === "projects" && (
