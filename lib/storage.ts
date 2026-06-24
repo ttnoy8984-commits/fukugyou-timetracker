@@ -8,7 +8,14 @@ export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : defaultData;
+    if (!raw) return defaultData;
+    const parsed = JSON.parse(raw);
+    // 旧データ（hourlyRate）を新形式（contractAmount）に変換
+    const projects = (parsed.projects ?? []).map((p: Record<string, unknown>) => ({
+      ...p,
+      contractAmount: p.contractAmount ?? p.hourlyRate ?? 0,
+    }));
+    return { ...defaultData, ...parsed, projects };
   } catch {
     return defaultData;
   }
