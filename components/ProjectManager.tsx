@@ -14,13 +14,14 @@ interface Props {
   onAddTemplate: (name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
   getProjectTotalSeconds: (projectId: string) => number;
+  getTaskTotalSeconds: (taskId: string) => number;
 }
 
 export default function ProjectManager({
   projects, tasks, templates,
   onAddProject, onDeleteProject, onAddTask,
   onAddTemplate, onDeleteTemplate,
-  getProjectTotalSeconds,
+  getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
@@ -259,13 +260,38 @@ export default function ProjectManager({
                   <span className="text-gray-300 text-xs">{expandedProject === p.id ? "▲" : "▼"}</span>
                 </div>
                 {expandedProject === p.id && (
-                  <div className="px-6 pb-4 space-y-1">
+                  <div className="px-6 pb-4 space-y-2 bg-gray-50 border-t border-gray-100">
                     {projectTasks.length === 0 ? (
-                      <p className="text-xs text-gray-400">タスクなし</p>
+                      <p className="text-xs text-gray-400 pt-3">タスクなし</p>
                     ) : (
-                      projectTasks.map((t) => (
-                        <div key={t.id} className="text-sm text-gray-500 pl-5">· {t.name}</div>
-                      ))
+                      <>
+                        <p className="text-xs text-gray-400 pt-3 uppercase tracking-wider">タスク別作業時間</p>
+                        {projectTasks.map((t) => {
+                          const taskSec = getTaskTotalSeconds(t.id);
+                          return (
+                            <div key={t.id}>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-600">{t.name}</span>
+                                <span className="text-xs font-mono text-gray-500">
+                                  {taskSec > 0 ? formatDuration(taskSec) : "未作業"}
+                                </span>
+                              </div>
+                              {taskSec > 0 && totalSeconds > 0 && (
+                                <div className="w-full bg-gray-200 rounded-full h-1">
+                                  <div
+                                    className="h-1 rounded-full"
+                                    style={{
+                                      backgroundColor: p.color,
+                                      opacity: 0.6,
+                                      width: `${(taskSec / totalSeconds) * 100}%`,
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
                     )}
                   </div>
                 )}

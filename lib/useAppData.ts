@@ -151,26 +151,43 @@ export function useAppData() {
     [data]
   );
 
+  const getTaskTotalSeconds = useCallback(
+    (taskId: string) => {
+      return data.entries
+        .filter((e) => e.taskId === taskId && e.endTime !== null)
+        .reduce((sum, e) => sum + e.durationSeconds, 0);
+    },
+    [data]
+  );
+
   const getMonthlySummary = useCallback(
     (year: number, month: number) => {
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
       const monthEntries = data.entries.filter(
         (e) => e.date.startsWith(prefix) && e.endTime !== null
       );
-      const byProject: Record<string, { seconds: number; contractAmount: number; effectiveRate: number; name: string; color: string }> = {};
+      const byProject: Record<string, {
+        seconds: number; contractAmount: number; effectiveRate: number;
+        name: string; color: string;
+        byTask: Record<string, { taskName: string; seconds: number }>;
+      }> = {};
       for (const e of monthEntries) {
         const project = data.projects.find((p) => p.id === e.projectId);
+        const task = data.tasks.find((t) => t.id === e.taskId);
         if (!project) continue;
         if (!byProject[e.projectId]) {
           byProject[e.projectId] = {
-            seconds: 0,
-            contractAmount: project.contractAmount,
-            effectiveRate: 0,
-            name: project.name,
-            color: project.color,
+            seconds: 0, contractAmount: project.contractAmount, effectiveRate: 0,
+            name: project.name, color: project.color, byTask: {},
           };
         }
         byProject[e.projectId].seconds += e.durationSeconds;
+        if (task) {
+          if (!byProject[e.projectId].byTask[e.taskId]) {
+            byProject[e.projectId].byTask[e.taskId] = { taskName: task.name, seconds: 0 };
+          }
+          byProject[e.projectId].byTask[e.taskId].seconds += e.durationSeconds;
+        }
       }
       for (const key of Object.keys(byProject)) {
         const row = byProject[key];
@@ -195,6 +212,7 @@ export function useAppData() {
     addManualEntry,
     deleteEntry,
     getProjectTotalSeconds,
+    getTaskTotalSeconds,
     getMonthlySummary,
   };
 }
