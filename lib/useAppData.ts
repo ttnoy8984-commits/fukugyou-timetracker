@@ -7,12 +7,13 @@ import {
   createEntry,
   createProject,
   createTask,
+  createTemplate,
   loadData,
   saveData,
 } from "./storage";
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>({ projects: [], tasks: [], entries: [] });
+  const [data, setData] = useState<AppData>({ projects: [], tasks: [], entries: [], templates: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
@@ -40,9 +41,17 @@ export function useAppData() {
   }, []);
 
   const addProject = useCallback(
-    (name: string, contractAmount: number, color: string) => {
+    (name: string, contractAmount: number, color: string, templateId?: string) => {
       const p = createProject(name, contractAmount, color);
-      persist({ ...data, projects: [...data.projects, p] });
+      const template = data.templates.find((t) => t.id === templateId);
+      const newTasks = template
+        ? template.taskNames.map((taskName) => createTask(p.id, taskName))
+        : [];
+      persist({
+        ...data,
+        projects: [...data.projects, p],
+        tasks: [...data.tasks, ...newTasks],
+      });
       return p;
     },
     [data, persist]
@@ -51,6 +60,7 @@ export function useAppData() {
   const deleteProject = useCallback(
     (id: string) => {
       persist({
+        ...data,
         projects: data.projects.filter((p) => p.id !== id),
         tasks: data.tasks.filter((t) => t.projectId !== id),
         entries: data.entries.filter((e) => e.projectId !== id),
@@ -64,6 +74,22 @@ export function useAppData() {
       const t = createTask(projectId, name);
       persist({ ...data, tasks: [...data.tasks, t] });
       return t;
+    },
+    [data, persist]
+  );
+
+  const addTemplate = useCallback(
+    (name: string, taskNames: string[]) => {
+      const t = createTemplate(name, taskNames);
+      persist({ ...data, templates: [...(data.templates ?? []), t] });
+      return t;
+    },
+    [data, persist]
+  );
+
+  const deleteTemplate = useCallback(
+    (id: string) => {
+      persist({ ...data, templates: (data.templates ?? []).filter((t) => t.id !== id) });
     },
     [data, persist]
   );
@@ -116,7 +142,6 @@ export function useAppData() {
     [data, persist]
   );
 
-  // 案件ごとの合計作業時間を返す
   const getProjectTotalSeconds = useCallback(
     (projectId: string) => {
       return data.entries
@@ -126,7 +151,6 @@ export function useAppData() {
     [data]
   );
 
-  // 月次集計（案件ごとの作業時間＋実質時給）
   const getMonthlySummary = useCallback(
     (year: number, month: number) => {
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
@@ -148,7 +172,6 @@ export function useAppData() {
         }
         byProject[e.projectId].seconds += e.durationSeconds;
       }
-      // 実質時給を計算
       for (const key of Object.keys(byProject)) {
         const row = byProject[key];
         row.effectiveRate = calcEffectiveHourlyRate(row.seconds, row.contractAmount);
@@ -165,10 +188,12 @@ export function useAppData() {
     addProject,
     deleteProject,
     addTask,
+    addTemplate,
+    deleteTemplate,
     startTimer,
     stopTimer,
-    deleteEntry,
     addManualEntry,
+    deleteEntry,
     getProjectTotalSeconds,
     getMonthlySummary,
   };

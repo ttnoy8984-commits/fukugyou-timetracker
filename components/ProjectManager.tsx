@@ -1,30 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { Project, Task } from "@/lib/types";
+import { Project, Task, TaskTemplate } from "@/lib/types";
 import { calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
 interface Props {
   projects: Project[];
   tasks: Task[];
-  onAddProject: (name: string, contractAmount: number, color: string) => void;
+  templates: TaskTemplate[];
+  onAddProject: (name: string, contractAmount: number, color: string, templateId?: string) => void;
   onDeleteProject: (id: string) => void;
   onAddTask: (projectId: string, name: string) => void;
+  onAddTemplate: (name: string, taskNames: string[]) => void;
+  onDeleteTemplate: (id: string) => void;
   getProjectTotalSeconds: (projectId: string) => number;
 }
 
-export default function ProjectManager({ projects, tasks, onAddProject, onDeleteProject, onAddTask, getProjectTotalSeconds }: Props) {
+export default function ProjectManager({
+  projects, tasks, templates,
+  onAddProject, onDeleteProject, onAddTask,
+  onAddTemplate, onDeleteTemplate,
+  getProjectTotalSeconds,
+}: Props) {
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
   const [color, setColor] = useState("#1a1a1a");
+  const [templateId, setTemplateId] = useState("");
+
   const [taskName, setTaskName] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
+  // テンプレート作成
+  const [tplName, setTplName] = useState("");
+  const [tplTaskInput, setTplTaskInput] = useState("");
+  const [tplTaskNames, setTplTaskNames] = useState<string[]>([]);
+  const [showTemplateForm, setShowTemplateForm] = useState(false);
+
   function handleAddProject() {
     if (!name.trim() || !rate) return;
-    onAddProject(name.trim(), Number(rate), color);
-    setName(""); setRate(""); setColor("#1a1a1a");
+    onAddProject(name.trim(), Number(rate), color, templateId || undefined);
+    setName(""); setRate(""); setColor("#1a1a1a"); setTemplateId("");
   }
 
   function handleAddTask() {
@@ -33,8 +49,98 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
     setTaskName("");
   }
 
+  function handleAddTplTask() {
+    const t = tplTaskInput.trim();
+    if (!t || tplTaskNames.includes(t)) return;
+    setTplTaskNames([...tplTaskNames, t]);
+    setTplTaskInput("");
+  }
+
+  function handleSaveTemplate() {
+    if (!tplName.trim() || tplTaskNames.length === 0) return;
+    onAddTemplate(tplName.trim(), tplTaskNames);
+    setTplName(""); setTplTaskNames([]); setTplTaskInput(""); setShowTemplateForm(false);
+  }
+
   return (
     <div className="space-y-6">
+      {/* テンプレート管理 */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <button
+          onClick={() => setShowTemplateForm(!showTemplateForm)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+        >
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">タスクテンプレート</h2>
+          <span className="text-gray-400 text-xs">{showTemplateForm ? "▲" : "▼"}</span>
+        </button>
+
+        {showTemplateForm && (
+          <div className="border-t border-gray-100 p-6 space-y-3">
+            {/* 既存テンプレート一覧 */}
+            {templates.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {templates.map((t) => (
+                  <div key={t.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
+                    <div>
+                      <div className="text-sm font-medium text-gray-800">{t.name}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{t.taskNames.join("・")}</div>
+                    </div>
+                    <button
+                      onClick={() => onDeleteTemplate(t.id)}
+                      className="text-gray-300 hover:text-red-400 text-xs ml-3 mt-0.5 transition-colors"
+                    >
+                      削除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 新規テンプレート作成 */}
+            <div className="text-xs font-medium text-gray-400 mb-1">新規テンプレート</div>
+            <input
+              value={tplName}
+              onChange={(e) => setTplName(e.target.value)}
+              placeholder="テンプレート名（例：動画編集）"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            />
+            <div className="flex gap-2">
+              <input
+                value={tplTaskInput}
+                onChange={(e) => setTplTaskInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
+                placeholder="タスク名を入力してEnter"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              />
+              <button
+                onClick={handleAddTplTask}
+                disabled={!tplTaskInput.trim()}
+                className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-sm font-medium px-4 rounded-xl transition-colors"
+              >
+                追加
+              </button>
+            </div>
+            {tplTaskNames.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tplTaskNames.map((t) => (
+                  <span key={t} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+                    {t}
+                    <button onClick={() => setTplTaskNames(tplTaskNames.filter((n) => n !== t))} className="text-gray-400 hover:text-red-400">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={handleSaveTemplate}
+              disabled={!tplName.trim() || tplTaskNames.length === 0}
+              className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+            >
+              テンプレートを保存
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* 新規案件 */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-3">
         <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新規案件</h2>
@@ -62,6 +168,18 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
             />
           </div>
         </div>
+        {templates.length > 0 && (
+          <select
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+          >
+            <option value="">テンプレートを使用しない</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}（{t.taskNames.join("・")}）</option>
+            ))}
+          </select>
+        )}
         <button
           onClick={handleAddProject}
           disabled={!name.trim() || !rate}
@@ -73,7 +191,7 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
 
       {/* 新規タスク */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-3">
-        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新規タスク</h2>
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">タスクを個別追加</h2>
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}

@@ -19,7 +19,7 @@ const tabs: { key: Tab; label: string }[] = [
 export default function Home() {
   const {
     data, activeEntry, elapsed,
-    addProject, deleteProject, addTask,
+    addProject, deleteProject, addTask, addTemplate, deleteTemplate,
     startTimer, stopTimer, addManualEntry, deleteEntry, getProjectTotalSeconds, getMonthlySummary,
   } = useAppData();
 
@@ -82,9 +82,12 @@ export default function Home() {
           <ProjectManager
             projects={data.projects}
             tasks={data.tasks}
+            templates={data.templates ?? []}
             onAddProject={addProject}
             onDeleteProject={deleteProject}
             onAddTask={addTask}
+            onAddTemplate={addTemplate}
+            onDeleteTemplate={deleteTemplate}
             getProjectTotalSeconds={getProjectTotalSeconds}
           />
         )}
