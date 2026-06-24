@@ -9,41 +9,34 @@ import MonthlyReport from "@/components/MonthlyReport";
 
 type Tab = "timer" | "projects" | "log" | "report";
 
+const tabs: { key: Tab; label: string }[] = [
+  { key: "timer", label: "タイマー" },
+  { key: "projects", label: "案件" },
+  { key: "log", label: "ログ" },
+  { key: "report", label: "レポート" },
+];
+
 export default function Home() {
   const {
-    data,
-    activeEntry,
-    elapsed,
-    addProject,
-    deleteProject,
-    addTask,
-    startTimer,
-    stopTimer,
-    deleteEntry,
-    getMonthlySummary,
+    data, activeEntry, elapsed,
+    addProject, deleteProject, addTask,
+    startTimer, stopTimer, deleteEntry, getMonthlySummary,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
 
-  const tabs: { key: Tab; label: string; icon: string }[] = [
-    { key: "timer", label: "タイマー", icon: "⏱" },
-    { key: "projects", label: "案件", icon: "📁" },
-    { key: "log", label: "ログ", icon: "📋" },
-    { key: "report", label: "レポート", icon: "📊" },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-slate-100">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f8f8f7]">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black text-indigo-700">副業タイムトラッカー</h1>
-            <p className="text-xs text-gray-400">Side Job Time Tracker</p>
+            <h1 className="text-lg font-semibold text-gray-900 tracking-tight">副業タイムトラッカー</h1>
           </div>
           {activeEntry && (
-            <div className="flex items-center gap-2 bg-indigo-50 rounded-full px-3 py-1">
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-              <span className="text-sm font-mono font-bold text-indigo-600">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-gray-900 rounded-full animate-pulse" />
+              <span className="text-sm font-mono text-gray-700">
                 {String(Math.floor(elapsed / 3600)).padStart(2, "0")}:
                 {String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:
                 {String(elapsed % 60).padStart(2, "0")}
@@ -53,26 +46,27 @@ export default function Home() {
         </div>
       </header>
 
-      <nav className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 flex">
+      {/* Nav */}
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-xl mx-auto px-6 flex gap-6">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-3 text-sm font-medium transition border-b-2 ${
+              className={`py-3 text-sm transition-colors border-b-2 ${
                 tab === t.key
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-gray-900 text-gray-900 font-medium"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
-              <span className="mr-1">{t.icon}</span>
               {t.label}
             </button>
           ))}
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      {/* Content */}
+      <main className="max-w-xl mx-auto px-6 py-8">
         {tab === "timer" && (
           <Timer
             projects={data.projects}

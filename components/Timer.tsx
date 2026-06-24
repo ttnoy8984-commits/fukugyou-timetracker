@@ -29,69 +29,76 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, onStart, 
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6 space-y-4">
-      <h2 className="text-xl font-bold text-gray-800">タイマー</h2>
-
+    <div className="space-y-6">
       {activeEntry ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-3 h-3 rounded-full animate-pulse"
-              style={{ backgroundColor: activeProject?.color ?? "#6366f1" }}
-            />
-            <span className="font-medium text-gray-700">{activeProject?.name}</span>
-            <span className="text-sm text-gray-500">/ {activeTask?.name}</span>
+        <div className="bg-white rounded-2xl p-8 space-y-6 border border-gray-100">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject?.color ?? "#1a1a1a" }} />
+              <span className="text-sm text-gray-500">{activeProject?.name} / {activeTask?.name}</span>
+            </div>
+            {activeEntry.note && <p className="text-sm text-gray-400 pl-4">{activeEntry.note}</p>}
           </div>
-          {activeEntry.note && (
-            <p className="text-sm text-gray-500">{activeEntry.note}</p>
-          )}
-          <div className="text-5xl font-mono font-bold text-center py-4 text-indigo-600">
-            {formatDuration(elapsed)}
+
+          <div className="text-center">
+            <div className="text-6xl font-mono font-light text-gray-900 tracking-tight">
+              {formatDuration(elapsed)}
+            </div>
           </div>
+
           <button
             onClick={onStop}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition"
+            className="w-full bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
           >
             停止
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="bg-white rounded-2xl p-8 space-y-4 border border-gray-100">
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新しい作業</h2>
+
           <select
             value={projectId}
             onChange={(e) => { setProjectId(e.target.value); setTaskId(""); }}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           >
-            <option value="">案件を選択...</option>
+            <option value="">案件を選択</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+
           <select
             value={taskId}
             onChange={(e) => setTaskId(e.target.value)}
             disabled={!projectId}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:bg-gray-100"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
           >
-            <option value="">タスクを選択...</option>
+            <option value="">タスクを選択</option>
             {filteredTasks.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="メモ（任意）"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           />
+
           <button
             onClick={handleStart}
             disabled={!projectId || !taskId}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition"
+            className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
           >
             開始
           </button>
         </div>
+      )}
+
+      {projects.length === 0 && (
+        <p className="text-center text-sm text-gray-400">まず「案件」タブで案件とタスクを登録してください</p>
       )}
     </div>
   );

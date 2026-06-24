@@ -18,41 +18,40 @@ export default function EntryLog({ entries, projects, tasks, onDelete }: Props) 
 
   if (completed.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3">作業ログ</h2>
+      <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
         <p className="text-sm text-gray-400">まだ記録がありません</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">作業ログ</h2>
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">作業ログ</h2>
+      </div>
+      <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
         {completed.map((e) => {
           const project = projects.find((p) => p.id === e.projectId);
           const task = tasks.find((t) => t.id === e.taskId);
           const earnings = project ? calcEarnings(e.durationSeconds, project.hourlyRate) : 0;
           return (
-            <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 border border-gray-100">
+            <div key={e.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color ?? "#ccc" }} />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">{project?.name}</span>
-                  <span className="text-xs text-gray-400 truncate">/ {task?.name}</span>
+                <div className="text-sm font-medium text-gray-800 truncate">
+                  {project?.name} <span className="text-gray-400 font-normal">/ {task?.name}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span>{e.date}</span>
-                  {e.note && <span className="truncate">{e.note}</span>}
+                <div className="text-xs text-gray-400 mt-0.5">
+                  {e.date}{e.note && ` · ${e.note}`}
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
                 <div className="text-sm font-mono text-gray-700">{formatDuration(e.durationSeconds)}</div>
-                <div className="text-xs text-emerald-600 font-medium">¥{Math.round(earnings).toLocaleString()}</div>
+                <div className="text-xs text-gray-500 mt-0.5">¥{Math.round(earnings).toLocaleString()}</div>
               </div>
               <button
                 onClick={() => onDelete(e.id)}
-                className="text-gray-300 hover:text-red-400 text-xs ml-1"
+                className="text-gray-200 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-all"
               >
                 ✕
               </button>

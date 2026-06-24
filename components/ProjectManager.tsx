@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { Project, Task } from "@/lib/types";
 
-const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#14b8a6"];
-
 interface Props {
   projects: Project[];
   tasks: Task[];
@@ -16,7 +14,7 @@ interface Props {
 export default function ProjectManager({ projects, tasks, onAddProject, onDeleteProject, onAddTask }: Props) {
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState("#1a1a1a");
   const [taskName, setTaskName] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
@@ -24,7 +22,7 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
   function handleAddProject() {
     if (!name.trim() || !rate) return;
     onAddProject(name.trim(), Number(rate), color);
-    setName(""); setRate(""); setColor(COLORS[0]);
+    setName(""); setRate(""); setColor("#1a1a1a");
   }
 
   function handleAddTask() {
@@ -34,55 +32,52 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6 space-y-5">
-      <h2 className="text-xl font-bold text-gray-800">案件・タスク管理</h2>
-
-      {/* Add project */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-gray-600">新規案件</h3>
+    <div className="space-y-6">
+      {/* 新規案件 */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-3">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新規案件</h2>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="案件名"
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <input
             value={rate}
             onChange={(e) => setRate(e.target.value)}
             placeholder="時給（円）"
             type="number"
-            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           />
-          <div className="flex gap-1 items-center">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setColor(c)}
-                className={`w-6 h-6 rounded-full border-2 ${color === c ? "border-gray-700" : "border-transparent"}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-400">色</label>
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-1"
+            />
           </div>
         </div>
         <button
           onClick={handleAddProject}
           disabled={!name.trim() || !rate}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white text-sm font-bold py-2 rounded-lg transition"
+          className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
         >
-          案件を追加
+          追加
         </button>
       </div>
 
-      {/* Add task */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-gray-600">新規タスク</h3>
+      {/* 新規タスク */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-3">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新規タスク</h2>
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
         >
-          <option value="">案件を選択...</option>
+          <option value="">案件を選択</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -92,54 +87,59 @@ export default function ProjectManager({ projects, tasks, onAddProject, onDelete
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
             placeholder="タスク名"
-            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           />
           <button
             onClick={handleAddTask}
             disabled={!selectedProject || !taskName.trim()}
-            className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-bold px-4 rounded-lg transition"
+            className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-5 rounded-xl transition-colors"
           >
             追加
           </button>
         </div>
       </div>
 
-      {/* Project list */}
-      <div className="space-y-2">
-        {projects.map((p) => {
-          const projectTasks = tasks.filter((t) => t.projectId === p.id);
-          return (
-            <div key={p.id} className="border rounded-lg overflow-hidden">
-              <div
-                className="flex items-center gap-2 p-3 cursor-pointer hover:bg-gray-50"
-                onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
-              >
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                <span className="font-medium text-sm flex-1">{p.name}</span>
-                <span className="text-xs text-gray-500">¥{p.hourlyRate.toLocaleString()}/h</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeleteProject(p.id); }}
-                  className="text-red-400 hover:text-red-600 text-xs ml-1"
+      {/* 案件一覧 */}
+      {projects.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">案件一覧</h2>
+          </div>
+          {projects.map((p, i) => {
+            const projectTasks = tasks.filter((t) => t.projectId === p.id);
+            return (
+              <div key={p.id} className={i > 0 ? "border-t border-gray-100" : ""}>
+                <div
+                  className="flex items-center gap-3 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
                 >
-                  削除
-                </button>
-                <span className="text-gray-400 text-xs">{expandedProject === p.id ? "▲" : "▼"}</span>
-              </div>
-              {expandedProject === p.id && (
-                <div className="border-t bg-gray-50 px-4 py-2 space-y-1">
-                  {projectTasks.length === 0 ? (
-                    <p className="text-xs text-gray-400">タスクなし</p>
-                  ) : (
-                    projectTasks.map((t) => (
-                      <div key={t.id} className="text-sm text-gray-600">・{t.name}</div>
-                    ))
-                  )}
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                  <span className="text-sm font-medium text-gray-800 flex-1">{p.name}</span>
+                  <span className="text-sm text-gray-400">¥{p.hourlyRate.toLocaleString()}/h</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteProject(p.id); }}
+                    className="text-gray-300 hover:text-red-400 text-xs transition-colors ml-2"
+                  >
+                    削除
+                  </button>
+                  <span className="text-gray-300 text-xs">{expandedProject === p.id ? "▲" : "▼"}</span>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {expandedProject === p.id && (
+                  <div className="px-6 pb-4 space-y-1">
+                    {projectTasks.length === 0 ? (
+                      <p className="text-xs text-gray-400">タスクなし</p>
+                    ) : (
+                      projectTasks.map((t) => (
+                        <div key={t.id} className="text-sm text-gray-500 pl-5">· {t.name}</div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
