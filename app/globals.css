@@ -30,7 +30,7 @@ input, select, textarea {
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  color: #6b7280 !important;
+  color: #374151 !important;
 }
 
 input, select, textarea {
