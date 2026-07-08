@@ -4,6 +4,35 @@ import { useState } from "react";
 import { Project, Task, TaskTemplate } from "@/lib/types";
 import { calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
+const PRESET_COLORS = [
+  "#ef4444", // 赤
+  "#f97316", // オレンジ
+  "#eab308", // 黄
+  "#22c55e", // 緑
+  "#14b8a6", // ティール
+  "#3b82f6", // 青
+  "#6366f1", // インディゴ
+  "#a855f7", // 紫
+  "#ec4899", // ピンク
+  "#64748b", // グレー
+];
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {PRESET_COLORS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={`w-8 h-8 rounded-full border-2 transition-transform ${value === c ? "border-gray-800 scale-110" : "border-transparent"}`}
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   projects: Project[];
   tasks: Task[];
@@ -232,14 +261,9 @@ export default function ProjectManager({
                   type="number"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
                 />
-                <div className="flex items-center gap-3">
+                <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-1"
-                  />
+                  <ColorPicker value={color} onChange={setColor} />
                 </div>
                 {templates.length > 0 && (
                   <select
@@ -363,14 +387,9 @@ export default function ProjectManager({
                   type="number"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
                 />
-                <div className="flex items-center gap-3">
+                <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-1"
-                  />
+                  <ColorPicker value={color} onChange={setColor} />
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
