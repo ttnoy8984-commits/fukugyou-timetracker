@@ -216,14 +216,33 @@ export function useAppData() {
           byProject[e.projectId].byTask[e.taskId].seconds += e.durationSeconds;
         }
       }
-      for (const key of Object.keys(byProject)) {
-        const row = byProject[key];
-        row.effectiveRate = calcEffectiveHourlyRate(row.seconds, row.contractAmount);
+      // 時給は案件の全期間合計時間で計算（月跨ぎ対応）
+      for (const [projectId, row] of Object.entries(byProject)) {
+        const totalSeconds = data.entries
+          .filter((e) => e.projectId === projectId && e.endTime !== null)
+          .reduce((sum, e) => sum + e.durationSeconds, 0);
+        row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, row.contractAmount);
       }
       return { byProject, entries: monthEntries };
     },
     [data]
   );
+
+  const getProjectSummaries = useCallback(() => {
+    return data.projects.map((p) => {
+      const projectEntries = data.entries.filter((e) => e.projectId === p.id && e.endTime !== null);
+      const totalSeconds = projectEntries.reduce((sum, e) => sum + e.durationSeconds, 0);
+      const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
+      const byTask: Record<string, { taskName: string; seconds: number }> = {};
+      for (const e of projectEntries) {
+        const task = data.tasks.find((t) => t.id === e.taskId);
+        if (!task) continue;
+        if (!byTask[e.taskId]) byTask[e.taskId] = { taskName: task.name, seconds: 0 };
+        byTask[e.taskId].seconds += e.durationSeconds;
+      }
+      return { id: p.id, name: p.name, color: p.color, contractAmount: p.contractAmount, totalSeconds, effectiveRate, byTask };
+    }).filter((p) => p.totalSeconds > 0 || p.contractAmount > 0);
+  }, [data]);
 
   return {
     data,
@@ -243,5 +262,6 @@ export function useAppData() {
     getProjectTotalSeconds,
     getTaskTotalSeconds,
     getMonthlySummary,
+    getProjectSummaries,
   };
 }

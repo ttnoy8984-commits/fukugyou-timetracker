@@ -21,7 +21,7 @@ export default function Home() {
   const {
     data, activeEntry, elapsed,
     addProject, updateProject, deleteProject, addTask, addTemplate, deleteTemplate,
-    startTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary,
+    startTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -131,7 +131,7 @@ export default function Home() {
           />
         )}
         {tab === "report" && (
-          <MonthlyReport getMonthlySummary={getMonthlySummary} />
+          <MonthlyReport getMonthlySummary={getMonthlySummary} getProjectSummaries={getProjectSummaries} />
         )}
       </main>
     </div>
