@@ -12,7 +12,18 @@ interface Props {
   onUpdate: (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
+type SortKey = "date_desc" | "date_asc" | "project" | "duration_desc" | "duration_asc";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "date_desc", label: "新しい順" },
+  { key: "date_asc",  label: "古い順" },
+  { key: "project",   label: "案件別" },
+  { key: "duration_desc", label: "時間が長い順" },
+  { key: "duration_asc",  label: "時間が短い順" },
+];
+
 export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate }: Props) {
+  const [sortKey, setSortKey] = useState<SortKey>("date_desc");
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [editProjectId, setEditProjectId] = useState("");
   const [editTaskId, setEditTaskId] = useState("");
@@ -24,7 +35,15 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   const completed = entries
     .filter((e) => e.endTime !== null)
-    .sort((a, b) => b.startTime.localeCompare(a.startTime))
+    .sort((a, b) => {
+      switch (sortKey) {
+        case "date_desc": return b.startTime.localeCompare(a.startTime);
+        case "date_asc":  return a.startTime.localeCompare(b.startTime);
+        case "project":   return a.projectId.localeCompare(b.projectId);
+        case "duration_desc": return b.durationSeconds - a.durationSeconds;
+        case "duration_asc":  return a.durationSeconds - b.durationSeconds;
+      }
+    })
     .slice(0, 50);
 
   function openEdit(e: TimeEntry) {
@@ -72,8 +91,17 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   return (
     <>
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">作業ログ</h2>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-gray-400 text-gray-600"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.key} value={o.key}>{o.label}</option>
+            ))}
+          </select>
         </div>
         <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
           {completed.map((e) => {
