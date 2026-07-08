@@ -37,7 +37,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8f8f7]">
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
-        <div className="max-w-xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold text-gray-900 tracking-tight">副業タイムトラッカー</h1>
           </div>
@@ -76,7 +76,7 @@ export default function Home() {
 
       {/* Nav */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-xl mx-auto px-6 flex gap-6">
+        <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 flex gap-6">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -94,7 +94,7 @@ export default function Home() {
       </nav>
 
       {/* Content */}
-      <main className="max-w-xl mx-auto px-6 py-8">
+      <main className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-8">
         {tab === "timer" && (
           <Timer
             projects={data.projects}
