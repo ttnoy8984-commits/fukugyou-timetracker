@@ -44,12 +44,16 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   const activeFilters = [filterProject, filterTask, filterDateFrom, filterDateTo].filter(Boolean).length;
 
-  const completed = entries
+  const filtered = entries
     .filter((e) => e.endTime !== null)
     .filter((e) => !filterProject || e.projectId === filterProject)
     .filter((e) => !filterTask || e.taskId === filterTask)
     .filter((e) => !filterDateFrom || e.date >= filterDateFrom)
-    .filter((e) => !filterDateTo || e.date <= filterDateTo)
+    .filter((e) => !filterDateTo || e.date <= filterDateTo);
+
+  const totalFilteredSeconds = filtered.reduce((sum, e) => sum + e.durationSeconds, 0);
+
+  const completed = filtered
     .sort((a, b) => {
       const diff = sortKey === "date"
         ? a.startTime.localeCompare(b.startTime)
@@ -208,6 +212,15 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        {completed.length > 0 && (
+          <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between bg-gray-50">
+            <span className="text-xs text-gray-400">{filtered.length}件</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400">合計</span>
+              <span className="text-sm font-mono font-medium text-gray-700">{formatDuration(totalFilteredSeconds)}</span>
+            </div>
           </div>
         )}
       </div>
