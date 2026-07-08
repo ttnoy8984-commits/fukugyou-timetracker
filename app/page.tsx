@@ -20,8 +20,8 @@ const tabs: { key: Tab; label: string }[] = [
 export default function Home() {
   const {
     data, activeEntry, elapsed,
-    addProject, deleteProject, addTask, addTemplate, deleteTemplate,
-    startTimer, stopTimer, addManualEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary,
+    addProject, updateProject, deleteProject, addTask, addTemplate, deleteTemplate,
+    startTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -112,6 +112,7 @@ export default function Home() {
             tasks={data.tasks}
             templates={data.templates ?? []}
             onAddProject={addProject}
+            onUpdateProject={updateProject}
             onDeleteProject={deleteProject}
             onAddTask={addTask}
             onAddTemplate={addTemplate}
@@ -126,6 +127,7 @@ export default function Home() {
             projects={data.projects}
             tasks={data.tasks}
             onDelete={deleteEntry}
+            onUpdate={updateEntry}
           />
         )}
         {tab === "report" && (

@@ -9,6 +9,7 @@ interface Props {
   tasks: Task[];
   templates: TaskTemplate[];
   onAddProject: (name: string, contractAmount: number, color: string, templateId?: string) => void;
+  onUpdateProject: (id: string, name: string, contractAmount: number, color: string) => void;
   onDeleteProject: (id: string) => void;
   onAddTask: (projectId: string, name: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
@@ -17,16 +18,17 @@ interface Props {
   getTaskTotalSeconds: (taskId: string) => number;
 }
 
-type ModalType = "project" | "task" | "template" | null;
+type ModalType = "project" | "task" | "template" | "editProject" | null;
 
 export default function ProjectManager({
   projects, tasks, templates,
-  onAddProject, onDeleteProject, onAddTask,
+  onAddProject, onUpdateProject, onDeleteProject, onAddTask,
   onAddTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
   const [modal, setModal] = useState<ModalType>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   // 案件追加フォーム
   const [name, setName] = useState("");
@@ -45,9 +47,24 @@ export default function ProjectManager({
 
   function closeModal() {
     setModal(null);
+    setEditingProject(null);
     setName(""); setRate(""); setColor("#6366f1"); setTemplateId("");
     setTaskName(""); setSelectedProject("");
     setTplName(""); setTplTaskInput(""); setTplTaskNames([]);
+  }
+
+  function openEditProject(p: Project) {
+    setEditingProject(p);
+    setName(p.name);
+    setRate(String(p.contractAmount));
+    setColor(p.color);
+    setModal("editProject");
+  }
+
+  function handleUpdateProject() {
+    if (!editingProject || !name.trim() || !rate) return;
+    onUpdateProject(editingProject.id, name.trim(), Number(rate), color);
+    closeModal();
   }
 
   function handleAddProject() {
@@ -170,12 +187,20 @@ export default function ProjectManager({
                         })}
                       </>
                     )}
-                    <button
-                      onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }}
-                      className="text-xs text-red-400 hover:text-red-600 pt-1 transition-colors"
-                    >
-                      この案件を削除
-                    </button>
+                    <div className="flex gap-4 pt-1">
+                      <button
+                        onClick={() => openEditProject(p)}
+                        className="text-xs text-gray-500 hover:text-gray-800 transition-colors"
+                      >
+                        編集
+                      </button>
+                      <button
+                        onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }}
+                        className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        削除
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -317,6 +342,40 @@ export default function ProjectManager({
                   <button onClick={handleSaveTemplate} disabled={!tplName.trim() || tplTaskNames.length === 0} className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
                 </div>
                 <button onClick={closeModal} className="w-full border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">閉じる</button>
+              </>
+            )}
+
+            {/* 案件編集 */}
+            {modal === "editProject" && (
+              <>
+                <h3 className="text-base font-semibold text-gray-900">案件を編集</h3>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="案件名"
+                  autoFocus
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                />
+                <input
+                  value={rate}
+                  onChange={(e) => setRate(e.target.value)}
+                  placeholder="契約金額（円）"
+                  type="number"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-500">カラー</label>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-1"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
+                  <button onClick={handleUpdateProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
+                </div>
               </>
             )}
           </div>
