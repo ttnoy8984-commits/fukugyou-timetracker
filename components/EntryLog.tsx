@@ -9,11 +9,13 @@ interface Props {
   projects: Project[];
   tasks: Task[];
   onDelete: (id: string) => void;
-  onUpdate: (id: string, date: string, startTime: string, endTime: string, note: string) => void;
+  onUpdate: (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
 export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate }: Props) {
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [editProjectId, setEditProjectId] = useState("");
+  const [editTaskId, setEditTaskId] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -27,6 +29,8 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   function openEdit(e: TimeEntry) {
     setEditingEntry(e);
+    setEditProjectId(e.projectId);
+    setEditTaskId(e.taskId);
     setDate(e.date);
     const start = new Date(e.startTime);
     const end = new Date(e.endTime!);
@@ -38,13 +42,16 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   function handleSave() {
     if (!editingEntry) return;
+    if (!editProjectId || !editTaskId) { setError("案件とタスクを選択してください"); return; }
     const s = new Date(`${date}T${startTime}`);
     const en = new Date(`${date}T${endTime}`);
     if (isNaN(s.getTime()) || isNaN(en.getTime())) { setError("時刻が正しくありません"); return; }
     if (en <= s) { setError("終了は開始より後にしてください"); return; }
-    onUpdate(editingEntry.id, date, startTime, endTime, note);
+    onUpdate(editingEntry.id, editProjectId, editTaskId, date, startTime, endTime, note);
     setEditingEntry(null);
   }
+
+  const editFilteredTasks = tasks.filter((t) => t.projectId === editProjectId);
 
   const previewDuration = (() => {
     if (!startTime || !endTime || !date) return null;
@@ -101,6 +108,35 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setEditingEntry(null)}>
           <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-gray-900">ログを編集</h3>
+
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">案件</label>
+              <select
+                value={editProjectId}
+                onChange={(e) => { setEditProjectId(e.target.value); setEditTaskId(""); }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              >
+                <option value="">案件を選択</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">タスク</label>
+              <select
+                value={editTaskId}
+                onChange={(e) => setEditTaskId(e.target.value)}
+                disabled={!editProjectId}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
+              >
+                <option value="">タスクを選択</option>
+                {editFilteredTasks.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
 
             <div>
               <label className="text-xs text-gray-400 mb-1 block">日付</label>

@@ -128,14 +128,14 @@ export function useAppData() {
   }, [activeEntry, data, persist]);
 
   const updateEntry = useCallback(
-    (id: string, date: string, startTime: string, endTime: string, note: string) => {
+    (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
       const startISO = new Date(`${date}T${startTime}`).toISOString();
       const endISO = new Date(`${date}T${endTime}`).toISOString();
       const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
       persist({
         ...data,
         entries: data.entries.map((e) =>
-          e.id === id ? { ...e, date, startTime: startISO, endTime: endISO, durationSeconds, note } : e
+          e.id === id ? { ...e, projectId, taskId, date, startTime: startISO, endTime: endISO, durationSeconds, note } : e
         ),
       });
     },
