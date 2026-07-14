@@ -45,8 +45,8 @@ export function createTask(projectId: string, name: string): Task {
 }
 
 export function createEntry(
-  projectId: string,
-  taskId: string,
+  projectId: string | null,
+  taskId: string | null,
   note: string
 ): TimeEntry {
   const now = new Date().toISOString();

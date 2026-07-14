@@ -15,8 +15,8 @@ export interface Task {
 
 export interface TimeEntry {
   id: string;
-  projectId: string;
-  taskId: string;
+  projectId: string | null;
+  taskId: string | null;
   startTime: string;
   endTime: string | null;
   durationSeconds: number;

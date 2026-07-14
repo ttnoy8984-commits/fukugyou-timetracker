@@ -21,7 +21,7 @@ export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
     addProject, updateProject, deleteProject, addTask, addTemplate, deleteTemplate,
-    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
+    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -106,6 +106,7 @@ export default function Home() {
             onPause={pauseTimer}
             onResume={resumeTimer}
             onStop={stopTimer}
+            onUpdate={assignEntry}
             onManualAdd={addManualEntry}
           />
         )}

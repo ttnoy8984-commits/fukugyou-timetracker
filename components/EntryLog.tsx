@@ -64,8 +64,8 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   function openEdit(e: TimeEntry) {
     setEditingEntry(e);
-    setEditProjectId(e.projectId);
-    setEditTaskId(e.taskId);
+    setEditProjectId(e.projectId ?? "");
+    setEditTaskId(e.taskId ?? "");
     setDate(e.date);
     const start = new Date(e.startTime);
     const end = new Date(e.endTime!);

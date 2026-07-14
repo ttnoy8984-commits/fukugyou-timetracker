@@ -10,20 +10,27 @@ interface Props {
   activeEntry: TimeEntry | null;
   elapsed: number;
   isPaused: boolean;
-  onStart: (projectId: string, taskId: string, note: string) => void;
+  onStart: (projectId: string | null, taskId: string | null, note: string) => void;
   onPause: () => void;
   onResume: () => void;
-  onStop: () => void;
+  onStop: () => string | null;
+  onUpdate: (id: string, projectId: string, taskId: string, note: string) => void;
   onManualAdd: (projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
-export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onManualAdd }: Props) {
+export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onUpdate, onManualAdd }: Props) {
   const [mode, setMode] = useState<"timer" | "manual">("timer");
 
   // タイマー用
   const [projectId, setProjectId] = useState("");
   const [taskId, setTaskId] = useState("");
   const [note, setNote] = useState("");
+
+  // 停止後の案件割り当てモーダル
+  const [assignEntryId, setAssignEntryId] = useState<string | null>(null);
+  const [assignProjectId, setAssignProjectId] = useState("");
+  const [assignTaskId, setAssignTaskId] = useState("");
+  const [assignNote, setAssignNote] = useState("");
 
   // 手入力用
   const [mProjectId, setMProjectId] = useState("");
@@ -40,9 +47,24 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   const activeTask = tasks.find((t) => t.id === activeEntry?.taskId);
 
   function handleStart() {
-    if (!projectId || !taskId) return;
-    onStart(projectId, taskId, note);
+    onStart(projectId || null, taskId || null, note);
     setNote("");
+  }
+
+  function handleStop() {
+    const unassignedId = onStop();
+    if (unassignedId) {
+      setAssignEntryId(unassignedId);
+      setAssignProjectId("");
+      setAssignTaskId("");
+      setAssignNote("");
+    }
+  }
+
+  function handleAssign() {
+    if (!assignEntryId || !assignProjectId || !assignTaskId) return;
+    onUpdate(assignEntryId, assignProjectId, assignTaskId, assignNote);
+    setAssignEntryId(null);
   }
 
   function handleManualAdd() {
@@ -102,8 +124,10 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             <>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject?.color ?? "#1a1a1a" }} />
-                  <span className="text-sm text-gray-500">{activeProject?.name} / {activeTask?.name}</span>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject?.color ?? "#d1d5db" }} />
+                  <span className="text-sm text-gray-500">
+                    {activeProject ? `${activeProject.name} / ${activeTask?.name ?? "—"}` : "案件未設定（停止後に設定できます）"}
+                  </span>
                 </div>
                 {activeEntry.note && <p className="text-sm text-gray-400 pl-4">{activeEntry.note}</p>}
               </div>
@@ -121,7 +145,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                   {isPaused ? "再開" : "一時停止"}
                 </button>
                 <button
-                  onClick={onStop}
+                  onClick={handleStop}
                   className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
                 >
                   停止
@@ -136,7 +160,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                 onChange={(e) => { setProjectId(e.target.value); setTaskId(""); }}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
               >
-                <option value="">案件を選択</option>
+                <option value="">案件（後で設定可）</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -147,7 +171,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                 disabled={!projectId}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
               >
-                <option value="">タスクを選択</option>
+                <option value="">タスク（後で設定可）</option>
                 {filteredTasks.map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
@@ -160,8 +184,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
               />
               <button
                 onClick={handleStart}
-                disabled={!projectId || !taskId}
-                className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+                className="w-full bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
               >
                 開始
               </button>
@@ -254,6 +277,58 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
 
       {projects.length === 0 && (
         <p className="text-center text-sm text-gray-400">まず「案件」タブで案件とタスクを登録してください</p>
+      )}
+
+      {/* 停止後の案件割り当てモーダル */}
+      {assignEntryId && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">作業を記録しました</h3>
+              <p className="text-xs text-gray-400 mt-1">案件とタスクを割り当ててください（後でログから編集もできます）</p>
+            </div>
+            <select
+              value={assignProjectId}
+              onChange={(e) => { setAssignProjectId(e.target.value); setAssignTaskId(""); }}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            >
+              <option value="">案件を選択</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <select
+              value={assignTaskId}
+              onChange={(e) => setAssignTaskId(e.target.value)}
+              disabled={!assignProjectId}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
+            >
+              <option value="">タスクを選択</option>
+              {tasks.filter((t) => t.projectId === assignProjectId).map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <input
+              value={assignNote}
+              onChange={(e) => setAssignNote(e.target.value)}
+              placeholder="メモ（任意）"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAssignEntryId(null)}
+                className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                後で設定する
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={!assignProjectId || !assignTaskId}
+                className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

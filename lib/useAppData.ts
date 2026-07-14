@@ -112,7 +112,7 @@ export function useAppData() {
   );
 
   const startTimer = useCallback(
-    (projectId: string, taskId: string, note: string) => {
+    (projectId: string | null, taskId: string | null, note: string) => {
       if (activeEntry) return;
       const entry = createEntry(projectId, taskId, note);
       pausedSecondsRef.current = 0;
@@ -138,9 +138,8 @@ export function useAppData() {
     setIsPaused(false);
   }, [activeEntry, isPaused]);
 
-  const stopTimer = useCallback(() => {
-    if (!activeEntry) return;
-    // 一時停止中に停止した場合、停止時点までの一時停止時間も加算
+  const stopTimer = useCallback((): string | null => {
+    if (!activeEntry) return null;
     let totalPaused = pausedSecondsRef.current;
     if (isPaused && pausedAtRef.current !== null) {
       totalPaused += Math.floor((Date.now() - pausedAtRef.current) / 1000);
@@ -150,12 +149,28 @@ export function useAppData() {
     const duration = rawDuration - totalPaused;
     const updated = { ...activeEntry, endTime: now, durationSeconds: Math.max(0, duration) };
     persist({ ...data, entries: data.entries.map((e) => (e.id === activeEntry.id ? updated : e)) });
+    const stoppedId = activeEntry.id;
+    const hadProject = !!activeEntry.projectId;
     setActiveEntry(null);
     setIsPaused(false);
     pausedSecondsRef.current = 0;
     pausedAtRef.current = null;
     setElapsed(0);
+    // 案件未割り当ての場合はIDを返して呼び元でモーダルを出す
+    return hadProject ? null : stoppedId;
   }, [activeEntry, isPaused, data, persist]);
+
+  const assignEntry = useCallback(
+    (id: string, projectId: string, taskId: string, note: string) => {
+      persist({
+        ...data,
+        entries: data.entries.map((e) =>
+          e.id === id ? { ...e, projectId, taskId, note: note || e.note } : e
+        ),
+      });
+    },
+    [data, persist]
+  );
 
   const updateEntry = useCallback(
     (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
@@ -231,7 +246,7 @@ export function useAppData() {
       for (const e of monthEntries) {
         const project = data.projects.find((p) => p.id === e.projectId);
         const task = data.tasks.find((t) => t.id === e.taskId);
-        if (!project) continue;
+        if (!project || !e.projectId) continue;
         if (!byProject[e.projectId]) {
           byProject[e.projectId] = {
             seconds: 0, contractAmount: project.contractAmount, effectiveRate: 0,
@@ -239,7 +254,7 @@ export function useAppData() {
           };
         }
         byProject[e.projectId].seconds += e.durationSeconds;
-        if (task) {
+        if (task && e.taskId) {
           if (!byProject[e.projectId].byTask[e.taskId]) {
             byProject[e.projectId].byTask[e.taskId] = { taskName: task.name, seconds: 0 };
           }
@@ -265,6 +280,7 @@ export function useAppData() {
       const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
       const byTask: Record<string, { taskName: string; seconds: number }> = {};
       for (const e of projectEntries) {
+        if (!e.taskId) continue;
         const task = data.tasks.find((t) => t.id === e.taskId);
         if (!task) continue;
         if (!byTask[e.taskId]) byTask[e.taskId] = { taskName: task.name, seconds: 0 };
@@ -294,6 +310,7 @@ export function useAppData() {
     deleteEntry,
     getProjectTotalSeconds,
     getTaskTotalSeconds,
+    assignEntry,
     getMonthlySummary,
     getProjectSummaries,
   };
