@@ -19,9 +19,9 @@ const tabs: { key: Tab; label: string }[] = [
 
 export default function Home() {
   const {
-    data, activeEntry, elapsed,
+    data, activeEntry, elapsed, isPaused,
     addProject, updateProject, deleteProject, addTask, addTemplate, deleteTemplate,
-    startTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
+    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -44,7 +44,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {activeEntry && (
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-gray-900 rounded-full animate-pulse" />
+                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? "bg-amber-400" : "bg-gray-900 animate-pulse"}`} />
                 <span className="text-sm font-mono text-gray-700">
                   {String(Math.floor(elapsed / 3600)).padStart(2, "0")}:
                   {String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:
@@ -101,7 +101,10 @@ export default function Home() {
             tasks={data.tasks}
             activeEntry={activeEntry}
             elapsed={elapsed}
+            isPaused={isPaused}
             onStart={startTimer}
+            onPause={pauseTimer}
+            onResume={resumeTimer}
             onStop={stopTimer}
             onManualAdd={addManualEntry}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppData, TimeEntry } from "./types";
 import {
   calcEffectiveHourlyRate,
@@ -16,6 +16,10 @@ export function useAppData() {
   const [data, setData] = useState<AppData>({ projects: [], tasks: [], entries: [], templates: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  // 一時停止中に積算した秒数
+  const pausedSecondsRef = useRef(0);
+  const pausedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     const d = loadData();
@@ -28,12 +32,13 @@ export function useAppData() {
   }, []);
 
   useEffect(() => {
-    if (!activeEntry) return;
+    if (!activeEntry || isPaused) return;
     const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000));
+      const raw = Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000);
+      setElapsed(raw - pausedSecondsRef.current);
     }, 1000);
     return () => clearInterval(id);
-  }, [activeEntry]);
+  }, [activeEntry, isPaused]);
 
   const persist = useCallback((next: AppData) => {
     setData(next);
@@ -110,22 +115,47 @@ export function useAppData() {
     (projectId: string, taskId: string, note: string) => {
       if (activeEntry) return;
       const entry = createEntry(projectId, taskId, note);
+      pausedSecondsRef.current = 0;
+      pausedAtRef.current = null;
       persist({ ...data, entries: [...data.entries, entry] });
       setActiveEntry(entry);
+      setIsPaused(false);
       setElapsed(0);
     },
     [activeEntry, data, persist]
   );
 
+  const pauseTimer = useCallback(() => {
+    if (!activeEntry || isPaused) return;
+    pausedAtRef.current = Date.now();
+    setIsPaused(true);
+  }, [activeEntry, isPaused]);
+
+  const resumeTimer = useCallback(() => {
+    if (!activeEntry || !isPaused || pausedAtRef.current === null) return;
+    pausedSecondsRef.current += Math.floor((Date.now() - pausedAtRef.current) / 1000);
+    pausedAtRef.current = null;
+    setIsPaused(false);
+  }, [activeEntry, isPaused]);
+
   const stopTimer = useCallback(() => {
     if (!activeEntry) return;
+    // 一時停止中に停止した場合、停止時点までの一時停止時間も加算
+    let totalPaused = pausedSecondsRef.current;
+    if (isPaused && pausedAtRef.current !== null) {
+      totalPaused += Math.floor((Date.now() - pausedAtRef.current) / 1000);
+    }
     const now = new Date().toISOString();
-    const duration = Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000);
-    const updated = { ...activeEntry, endTime: now, durationSeconds: duration };
+    const rawDuration = Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000);
+    const duration = rawDuration - totalPaused;
+    const updated = { ...activeEntry, endTime: now, durationSeconds: Math.max(0, duration) };
     persist({ ...data, entries: data.entries.map((e) => (e.id === activeEntry.id ? updated : e)) });
     setActiveEntry(null);
+    setIsPaused(false);
+    pausedSecondsRef.current = 0;
+    pausedAtRef.current = null;
     setElapsed(0);
-  }, [activeEntry, data, persist]);
+  }, [activeEntry, isPaused, data, persist]);
 
   const updateEntry = useCallback(
     (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
@@ -248,12 +278,15 @@ export function useAppData() {
     data,
     activeEntry,
     elapsed,
+    isPaused,
     addProject,
     deleteProject,
     addTask,
     addTemplate,
     deleteTemplate,
     startTimer,
+    pauseTimer,
+    resumeTimer,
     stopTimer,
     addManualEntry,
     updateProject,

@@ -9,12 +9,15 @@ interface Props {
   tasks: Task[];
   activeEntry: TimeEntry | null;
   elapsed: number;
+  isPaused: boolean;
   onStart: (projectId: string, taskId: string, note: string) => void;
+  onPause: () => void;
+  onResume: () => void;
   onStop: () => void;
   onManualAdd: (projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
-export default function Timer({ projects, tasks, activeEntry, elapsed, onStart, onStop, onManualAdd }: Props) {
+export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onManualAdd }: Props) {
   const [mode, setMode] = useState<"timer" | "manual">("timer");
 
   // タイマー用
@@ -105,16 +108,25 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, onStart, 
                 {activeEntry.note && <p className="text-sm text-gray-400 pl-4">{activeEntry.note}</p>}
               </div>
               <div className="text-center">
-                <div className="text-6xl font-mono font-light text-gray-900 tracking-tight">
+                <div className={`text-6xl font-mono font-light tracking-tight ${isPaused ? "text-amber-400" : "text-gray-900"}`}>
                   {formatDuration(elapsed)}
                 </div>
+                {isPaused && <p className="text-xs text-amber-400 mt-1">一時停止中</p>}
               </div>
-              <button
-                onClick={onStop}
-                className="w-full bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
-              >
-                停止
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={isPaused ? onResume : onPause}
+                  className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium py-3 rounded-xl transition-colors"
+                >
+                  {isPaused ? "再開" : "一時停止"}
+                </button>
+                <button
+                  onClick={onStop}
+                  className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+                >
+                  停止
+                </button>
+              </div>
             </>
           ) : (
             <>
