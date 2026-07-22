@@ -53,9 +53,10 @@ export function useAppData() {
       contractAmount: number,
       color: string,
       taxIncluded: boolean = true,
-      clientId: string | null = null
+      clientId: string | null = null,
+      taskIds: string[] = []
     ) => {
-      const p = createProject(name, contractAmount, color, taxIncluded, clientId);
+      const p = createProject(name, contractAmount, color, taxIncluded, clientId, taskIds);
       persist({ ...data, projects: [...data.projects, p] });
       return p;
     },
@@ -69,12 +70,13 @@ export function useAppData() {
       contractAmount: number,
       color: string,
       taxIncluded: boolean = true,
-      clientId: string | null = null
+      clientId: string | null = null,
+      taskIds: string[] = []
     ) => {
       persist({
         ...data,
         projects: data.projects.map((p) =>
-          p.id === id ? { ...p, name, contractAmount, color, taxIncluded, clientId } : p
+          p.id === id ? { ...p, name, contractAmount, color, taxIncluded, clientId, taskIds } : p
         ),
       });
     },

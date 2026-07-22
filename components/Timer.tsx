@@ -41,8 +41,14 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   const [mNote, setMNote] = useState("");
   const [mError, setMError] = useState("");
 
-  const filteredTasks = tasks;
-  const mFilteredTasks = tasks;
+  function tasksForProject(pid: string) {
+    const project = projects.find((p) => p.id === pid);
+    if (!project || !project.taskIds || project.taskIds.length === 0) return tasks;
+    return tasks.filter((t) => project.taskIds!.includes(t.id));
+  }
+
+  const filteredTasks = projectId ? tasksForProject(projectId) : tasks;
+  const mFilteredTasks = mProjectId ? tasksForProject(mProjectId) : tasks;
   const activeProject = projects.find((p) => p.id === activeEntry?.projectId);
   const activeTask = tasks.find((t) => t.id === activeEntry?.taskId);
 

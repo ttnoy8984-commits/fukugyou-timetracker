@@ -19,6 +19,7 @@ export function loadData(): AppData {
       taxIncluded: typeof p.taxIncluded === "boolean" ? p.taxIncluded : true,
       clientId: p.clientId ?? null,
       completedAt: p.completedAt ?? null,
+      taskIds: Array.isArray(p.taskIds) ? p.taskIds : [],
     }));
 
     // 旧タスク（projectId付き）を共通タスクに昇格。名前重複は1つに統合しつつentryのtaskIdを付け替え
@@ -70,7 +71,8 @@ export function createProject(
   contractAmount: number,
   color: string,
   taxIncluded: boolean = true,
-  clientId: string | null = null
+  clientId: string | null = null,
+  taskIds: string[] = []
 ): Project {
   return {
     id: crypto.randomUUID(),
@@ -80,6 +82,7 @@ export function createProject(
     color,
     clientId,
     completedAt: null,
+    taskIds,
     createdAt: new Date().toISOString(),
   };
 }

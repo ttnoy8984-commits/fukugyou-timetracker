@@ -6,6 +6,7 @@ export interface Project {
   color: string;
   clientId?: string | null;
   completedAt?: string | null;
+  taskIds?: string[]; // この案件でよく使うタスク（未設定・空なら全タスクを表示）
   createdAt: string;
 }
 

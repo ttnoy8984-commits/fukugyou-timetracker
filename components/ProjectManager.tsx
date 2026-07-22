@@ -26,11 +26,11 @@ interface Props {
   tasks: Task[];
   taskGroups: TaskGroup[];
   clients: Client[];
-  onAddProject: (name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null) => void;
-  onUpdateProject: (id: string, name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null) => void;
+  onAddProject: (name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null, taskIds?: string[]) => void;
+  onUpdateProject: (id: string, name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null, taskIds?: string[]) => void;
   onDeleteProject: (id: string) => void;
   onToggleProjectComplete: (id: string) => void;
-  onAddTask: (name: string) => void;
+  onAddTask: (name: string) => Task;
   onDeleteTask: (taskId: string) => void;
   onAddTaskGroup: (name: string) => void;
   onDeleteTaskGroup: (groupId: string) => void;
@@ -78,6 +78,11 @@ export default function ProjectManager({
   const [addingClientInline, setAddingClientInline] = useState(false);
   const [inlineClientName, setInlineClientName] = useState("");
 
+  // 案件フォーム：関連タスク（グループ選択＋個別タスク選択＋新規追加の合算）
+  const [projectTaskIds, setProjectTaskIds] = useState<string[]>([]);
+  const [addingProjectTask, setAddingProjectTask] = useState(false);
+  const [projectNewTaskName, setProjectNewTaskName] = useState("");
+
   // クライアント追加・編集
   const [newClientName, setNewClientName] = useState("");
   const [renamingClientId, setRenamingClientId] = useState<string | null>(null);
@@ -106,6 +111,27 @@ export default function ProjectManager({
     setName(""); setRate(""); setColor("#6366f1");
     setTaxIncluded(true); setClientId("");
     setAddingClientInline(false); setInlineClientName("");
+    setProjectTaskIds([]); setAddingProjectTask(false); setProjectNewTaskName("");
+  }
+
+  function toggleProjectTask(taskId: string) {
+    setProjectTaskIds((prev) => prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]);
+  }
+
+  function toggleProjectTaskGroup(group: TaskGroup) {
+    const allIncluded = group.taskIds.every((id) => projectTaskIds.includes(id));
+    if (allIncluded) {
+      setProjectTaskIds((prev) => prev.filter((id) => !group.taskIds.includes(id)));
+    } else {
+      setProjectTaskIds((prev) => [...prev, ...group.taskIds.filter((id) => !prev.includes(id))]);
+    }
+  }
+
+  function handleAddProjectTaskInline() {
+    if (!projectNewTaskName.trim()) return;
+    const t = onAddTask(projectNewTaskName.trim());
+    setProjectTaskIds((prev) => [...prev, t.id]);
+    setProjectNewTaskName(""); setAddingProjectTask(false);
   }
 
   function handleAddClientInline() {
@@ -118,18 +144,19 @@ export default function ProjectManager({
   function openEditProject(p: Project) {
     setEditingProject(p); setName(p.name); setRate(String(p.contractAmount)); setColor(p.color);
     setTaxIncluded(p.taxIncluded); setClientId(p.clientId ?? "");
+    setProjectTaskIds(p.taskIds ?? []);
     setModal("editProject");
   }
 
   function handleAddProject() {
     if (!name.trim() || !rate) return;
-    onAddProject(name.trim(), Number(rate), color, taxIncluded, clientId || null);
+    onAddProject(name.trim(), Number(rate), color, taxIncluded, clientId || null, projectTaskIds);
     closeModal();
   }
 
   function handleUpdateProject() {
     if (!editingProject || !name.trim() || !rate) return;
-    onUpdateProject(editingProject.id, name.trim(), Number(rate), color, taxIncluded, clientId || null);
+    onUpdateProject(editingProject.id, name.trim(), Number(rate), color, taxIncluded, clientId || null, projectTaskIds);
     closeModal();
   }
 
@@ -608,6 +635,54 @@ export default function ProjectManager({
                   <label className="text-sm text-gray-500">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-500">関連タスク（任意）</label>
+                  {taskGroups.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {taskGroups.map((g) => {
+                        const active = g.taskIds.length > 0 && g.taskIds.every((id) => projectTaskIds.includes(id));
+                        return (
+                          <button key={g.id} type="button" onClick={() => toggleProjectTaskGroup(g)}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              active ? "bg-indigo-500 text-white border-indigo-500" : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                            }`}>
+                            {active ? "✓ " : ""}{g.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {tasks.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                      {tasks.map((t) => {
+                        const checked = projectTaskIds.includes(t.id);
+                        return (
+                          <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              checked ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                            }`}>
+                            {checked ? "✓ " : ""}{t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {addingProjectTask ? (
+                    <div className="flex gap-2">
+                      <input value={projectNewTaskName} onChange={(e) => setProjectNewTaskName(e.target.value)}
+                        onKeyDown={onEnterKey(handleAddProjectTaskInline)}
+                        placeholder="新規タスク名" autoFocus
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+                      <button onClick={handleAddProjectTaskInline} disabled={!projectNewTaskName.trim()}
+                        className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
+                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                      + 新規タスクを追加
+                    </button>
+                  )}
+                </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
                   <button onClick={handleAddProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">追加</button>
@@ -656,6 +731,54 @@ export default function ProjectManager({
                 <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-500">関連タスク（任意）</label>
+                  {taskGroups.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {taskGroups.map((g) => {
+                        const active = g.taskIds.length > 0 && g.taskIds.every((id) => projectTaskIds.includes(id));
+                        return (
+                          <button key={g.id} type="button" onClick={() => toggleProjectTaskGroup(g)}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              active ? "bg-indigo-500 text-white border-indigo-500" : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                            }`}>
+                            {active ? "✓ " : ""}{g.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {tasks.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                      {tasks.map((t) => {
+                        const checked = projectTaskIds.includes(t.id);
+                        return (
+                          <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              checked ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                            }`}>
+                            {checked ? "✓ " : ""}{t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {addingProjectTask ? (
+                    <div className="flex gap-2">
+                      <input value={projectNewTaskName} onChange={(e) => setProjectNewTaskName(e.target.value)}
+                        onKeyDown={onEnterKey(handleAddProjectTaskInline)}
+                        placeholder="新規タスク名" autoFocus
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+                      <button onClick={handleAddProjectTaskInline} disabled={!projectNewTaskName.trim()}
+                        className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
+                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                      + 新規タスクを追加
+                    </button>
+                  )}
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
