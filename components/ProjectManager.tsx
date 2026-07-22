@@ -83,9 +83,9 @@ export default function ProjectManager({
   const [newGroupName, setNewGroupName] = useState("");
   const [addingGroup, setAddingGroup] = useState(false);
 
-  // グループへのタスク追加 (groupId → 選択中taskId)
+  // グループへのタスク追加（複数選択）
   const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
-  const [pickTaskId, setPickTaskId] = useState("");
+  const [pickTaskIds, setPickTaskIds] = useState<string[]>([]);
 
   function closeModal() {
     setModal(null); setEditingProject(null);
@@ -123,9 +123,13 @@ export default function ProjectManager({
   }
 
   function handleAddToGroup(groupId: string) {
-    if (!pickTaskId) return;
-    onAddTaskToGroup(groupId, pickTaskId);
-    setPickTaskId(""); setAddingToGroup(null);
+    if (pickTaskIds.length === 0) return;
+    pickTaskIds.forEach((taskId) => onAddTaskToGroup(groupId, taskId));
+    setPickTaskIds([]); setAddingToGroup(null);
+  }
+
+  function togglePickTask(taskId: string) {
+    setPickTaskIds((prev) => prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]);
   }
 
   function openEditTemplate(t: TaskTemplate) {
@@ -332,19 +336,42 @@ export default function ProjectManager({
                           </div>
                         )}
                         {addingToGroup === g.id ? (
-                          <div className="flex gap-2">
-                            <select value={pickTaskId} onChange={(e) => setPickTaskId(e.target.value)}
-                              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-400">
-                              <option value="">タスクを選択</option>
-                              {availableTasks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
-                            <button onClick={() => handleAddToGroup(g.id)} disabled={!pickTaskId}
-                              className="bg-gray-900 text-white text-xs px-3 rounded-lg disabled:opacity-30">追加</button>
-                            <button onClick={() => { setAddingToGroup(null); setPickTaskId(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-white border border-gray-200 rounded-lg">
+                              {availableTasks.length === 0 ? (
+                                <span className="text-xs text-gray-400">追加できるタスクがありません</span>
+                              ) : (
+                                availableTasks.map((t) => {
+                                  const checked = pickTaskIds.includes(t.id);
+                                  return (
+                                    <button
+                                      key={t.id}
+                                      type="button"
+                                      onClick={() => togglePickTask(t.id)}
+                                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                        checked
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                                      }`}
+                                    >
+                                      {checked ? "✓ " : ""}{t.name}
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => { setAddingToGroup(null); setPickTaskIds([]); }}
+                                className="flex-1 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                              <button onClick={() => handleAddToGroup(g.id)} disabled={pickTaskIds.length === 0}
+                                className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">
+                                {pickTaskIds.length > 0 ? `${pickTaskIds.length}件を追加` : "追加"}
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           availableTasks.length > 0 && (
-                            <button onClick={() => { setAddingToGroup(g.id); setPickTaskId(""); }}
+                            <button onClick={() => { setAddingToGroup(g.id); setPickTaskIds([]); }}
                               className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                               + タスクを追加
                             </button>
