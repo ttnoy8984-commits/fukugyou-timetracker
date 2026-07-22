@@ -9,7 +9,7 @@ interface Props {
   projects: Project[];
   tasks: Task[];
   onDelete: (id: string) => void;
-  onUpdate: (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => void;
+  onUpdate: (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string, pausedSeconds?: number) => void;
 }
 
 type SortKey = "date" | "duration";
@@ -30,6 +30,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [note, setNote] = useState("");
+  const [pausedMinutes, setPausedMinutes] = useState("0");
   const [error, setError] = useState("");
 
   function handleSort(key: SortKey) {
@@ -74,6 +75,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     setStartTime(`${String(start.getHours()).padStart(2,"0")}:${String(start.getMinutes()).padStart(2,"0")}`);
     setEndTime(`${String(end.getHours()).padStart(2,"0")}:${String(end.getMinutes()).padStart(2,"0")}`);
     setNote(e.note);
+    setPausedMinutes(String(Math.round((e.pausedSeconds ?? 0) / 60)));
     setError("");
   }
 
@@ -84,7 +86,8 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     if (isNaN(s.getTime()) || isNaN(en.getTime())) { setError("時刻が正しくありません"); return; }
     // 終了時刻が開始時刻以前なら日を跨いだとみなす
     if (en <= s) en = new Date(en.getTime() + 24 * 60 * 60 * 1000);
-    onUpdate(editingEntry.id, editProjectId || null, editTaskId || null, date, startTime, endTime, note);
+    const pausedSeconds = Math.max(0, Number(pausedMinutes) || 0) * 60;
+    onUpdate(editingEntry.id, editProjectId || null, editTaskId || null, date, startTime, endTime, note, pausedSeconds);
     setEditingEntry(null);
   }
 
@@ -181,6 +184,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">案件</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">タスク</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">メモ</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">休憩</th>
                   <th className="text-right px-4 py-3 whitespace-nowrap">
                     <button onClick={() => handleSort("duration")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
                       時間{sortIcon("duration")}
@@ -204,6 +208,9 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{task?.name ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-400 text-xs max-w-[120px] truncate">{e.note || "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">
+                        {e.pausedSeconds ? <span className="text-amber-500">{formatDuration(e.pausedSeconds)}</span> : <span className="text-gray-300">—</span>}
+                      </td>
                       <td className="px-4 py-3 text-right font-mono text-gray-700 text-xs whitespace-nowrap">{formatDuration(e.durationSeconds)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
@@ -273,6 +280,12 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                 作業時間：<span className="font-mono font-medium text-gray-800">{previewDuration}</span>
               </div>
             )}
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">休憩時間（分）</label>
+              <input type="number" min="0" value={pausedMinutes} onChange={(e) => setPausedMinutes(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+              <p className="text-xs text-gray-400 mt-1">上の「作業時間」には含まれていません（タイマーの一時停止時間、または手動で記録する休憩）</p>
+            </div>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="メモ（任意）"
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
             {error && <p className="text-xs text-red-500">{error}</p>}

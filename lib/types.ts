@@ -37,6 +37,7 @@ export interface TimeEntry {
   startTime: string;
   endTime: string | null;
   durationSeconds: number;
+  pausedSeconds?: number; // タイマーの一時停止で除外された時間
   note: string;
   date: string;
 }

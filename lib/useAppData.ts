@@ -245,7 +245,7 @@ export function useAppData() {
     const now = new Date().toISOString();
     const rawDuration = Math.floor((Date.now() - new Date(activeEntry.startTime).getTime()) / 1000);
     const duration = rawDuration - totalPaused;
-    const updated = { ...activeEntry, endTime: now, durationSeconds: Math.max(0, duration) };
+    const updated = { ...activeEntry, endTime: now, durationSeconds: Math.max(0, duration), pausedSeconds: totalPaused };
     persist({ ...data, entries: data.entries.map((e) => (e.id === activeEntry.id ? updated : e)) });
     const stoppedId = activeEntry.id;
     const hadProject = !!activeEntry.projectId;
@@ -271,7 +271,7 @@ export function useAppData() {
   );
 
   const updateEntry = useCallback(
-    (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => {
+    (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string, pausedSeconds?: number) => {
       const start = new Date(`${date}T${startTime}`);
       let end = new Date(`${date}T${endTime}`);
       // 終了時刻が開始時刻以前なら日を跨いだとみなす
@@ -282,7 +282,7 @@ export function useAppData() {
       persist({
         ...data,
         entries: data.entries.map((e) =>
-          e.id === id ? { ...e, projectId, taskId, date, startTime: startISO, endTime: endISO, durationSeconds, note } : e
+          e.id === id ? { ...e, projectId, taskId, date, startTime: startISO, endTime: endISO, durationSeconds, note, pausedSeconds: pausedSeconds ?? e.pausedSeconds } : e
         ),
       });
     },
