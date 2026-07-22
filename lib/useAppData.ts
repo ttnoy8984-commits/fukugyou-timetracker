@@ -10,13 +10,12 @@ import {
   createProject,
   createTask,
   createTaskGroup,
-  createTemplate,
   loadData,
   saveData,
 } from "./storage";
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], clients: [], entries: [], templates: [] });
+  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], clients: [], entries: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -53,20 +52,11 @@ export function useAppData() {
       name: string,
       contractAmount: number,
       color: string,
-      templateId?: string,
       taxIncluded: boolean = true,
       clientId: string | null = null
     ) => {
       const p = createProject(name, contractAmount, color, taxIncluded, clientId);
-      const template = data.templates.find((t) => t.id === templateId);
-      const newTasks = template
-        ? template.taskNames.map((taskName) => createTask(taskName))
-        : [];
-      persist({
-        ...data,
-        projects: [...data.projects, p],
-        tasks: [...data.tasks, ...newTasks],
-      });
+      persist({ ...data, projects: [...data.projects, p] });
       return p;
     },
     [data, persist]
@@ -212,32 +202,6 @@ export function useAppData() {
         taskGroups: (data.taskGroups ?? []).map((g) =>
           g.id === groupId ? { ...g, taskIds: g.taskIds.filter((id) => id !== taskId) } : g
         ),
-      });
-    },
-    [data, persist]
-  );
-
-  const addTemplate = useCallback(
-    (name: string, taskNames: string[]) => {
-      const t = createTemplate(name, taskNames);
-      persist({ ...data, templates: [...(data.templates ?? []), t] });
-      return t;
-    },
-    [data, persist]
-  );
-
-  const deleteTemplate = useCallback(
-    (id: string) => {
-      persist({ ...data, templates: (data.templates ?? []).filter((t) => t.id !== id) });
-    },
-    [data, persist]
-  );
-
-  const updateTemplate = useCallback(
-    (id: string, name: string, taskNames: string[]) => {
-      persist({
-        ...data,
-        templates: (data.templates ?? []).map((t) => t.id === id ? { ...t, name, taskNames } : t),
       });
     },
     [data, persist]
@@ -449,8 +413,6 @@ export function useAppData() {
     removeTaskFromGroup,
     renameTask,
     renameTaskGroup,
-    addTemplate,
-    deleteTemplate,
     startTimer,
     pauseTimer,
     resumeTimer,
@@ -462,7 +424,6 @@ export function useAppData() {
     getProjectTotalSeconds,
     getTaskTotalSeconds,
     assignEntry,
-    updateTemplate,
     getMonthlySummary,
     getProjectSummaries,
   };

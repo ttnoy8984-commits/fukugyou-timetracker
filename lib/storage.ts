@@ -1,9 +1,9 @@
-import { AppData, Client, Project, Task, TaskGroup, TaskTemplate, TimeEntry } from "./types";
+import { AppData, Client, Project, Task, TaskGroup, TimeEntry } from "./types";
 
 const KEY = "fukugyou_data";
 export const TAX_RATE = 0.1;
 
-const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [], templates: [] };
+const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [] };
 
 export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
@@ -131,14 +131,6 @@ export function formatDuration(seconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function createTemplate(name: string, taskNames: string[]): TaskTemplate {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    taskNames,
-    createdAt: new Date().toISOString(),
-  };
-}
 
 export function calcEffectiveHourlyRate(totalSeconds: number, contractAmount: number): number {
   if (totalSeconds === 0) return 0;

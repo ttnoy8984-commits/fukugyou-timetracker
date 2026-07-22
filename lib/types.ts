@@ -40,18 +40,10 @@ export interface TimeEntry {
   date: string;
 }
 
-export interface TaskTemplate {
-  id: string;
-  name: string;
-  taskNames: string[];
-  createdAt: string;
-}
-
 export interface AppData {
   projects: Project[];
   tasks: Task[];
   taskGroups: TaskGroup[];
   clients: Client[];
   entries: TimeEntry[];
-  templates: TaskTemplate[];
 }

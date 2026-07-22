@@ -28,11 +28,6 @@ export function loadSeedData() {
     { id: "t8", projectId: "p3", name: "分析レポート", createdAt: `${y}-${m}-01T00:00:00.000Z` },
   ];
 
-  const templates = [
-    { id: "tpl1", name: "動画編集", taskNames: ["カット編集", "テロップ入れ", "演出・BGM"], createdAt: `${y}-${m}-01T00:00:00.000Z` },
-    { id: "tpl2", name: "ライティング", taskNames: ["リサーチ", "執筆", "校正"], createdAt: `${y}-${m}-01T00:00:00.000Z` },
-  ];
-
   function makeEntry(id: string, projectId: string, taskId: string, day: string, startH: number, durationH: number, note = "") {
     const date = `${y}-${m}-${day}`;
     const start = new Date(`${date}T${String(startH).padStart(2, "0")}:00:00`);
@@ -67,7 +62,7 @@ export function loadSeedData() {
     makeEntry("e15", "p2", "t6", "20", 10, 1, ""),
   ];
 
-  const data: AppData = { projects, tasks, taskGroups: [], clients, entries, templates };
+  const data: AppData = { projects, tasks, taskGroups: [], clients, entries };
   saveData(data);
   return data;
 }
