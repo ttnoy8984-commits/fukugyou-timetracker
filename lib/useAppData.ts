@@ -122,16 +122,30 @@ export function useAppData() {
     [data, persist]
   );
 
-  const addTaskToGroup = useCallback(
-    (groupId: string, taskId: string) => {
+  const addTasksToGroup = useCallback(
+    (groupId: string, taskIds: string[]) => {
       persist({
         ...data,
         taskGroups: (data.taskGroups ?? []).map((g) =>
-          g.id === groupId && !g.taskIds.includes(taskId)
-            ? { ...g, taskIds: [...g.taskIds, taskId] }
+          g.id === groupId
+            ? { ...g, taskIds: [...g.taskIds, ...taskIds.filter((id) => !g.taskIds.includes(id))] }
             : g
         ),
       });
+    },
+    [data, persist]
+  );
+
+  const renameTask = useCallback(
+    (taskId: string, name: string) => {
+      persist({ ...data, tasks: data.tasks.map((t) => t.id === taskId ? { ...t, name } : t) });
+    },
+    [data, persist]
+  );
+
+  const renameTaskGroup = useCallback(
+    (groupId: string, name: string) => {
+      persist({ ...data, taskGroups: (data.taskGroups ?? []).map((g) => g.id === groupId ? { ...g, name } : g) });
     },
     [data, persist]
   );
@@ -364,8 +378,10 @@ export function useAppData() {
     deleteTask,
     addTaskGroup,
     deleteTaskGroup,
-    addTaskToGroup,
+    addTasksToGroup,
     removeTaskFromGroup,
+    renameTask,
+    renameTaskGroup,
     addTemplate,
     deleteTemplate,
     startTimer,

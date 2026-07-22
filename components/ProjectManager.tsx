@@ -33,8 +33,10 @@ interface Props {
   onDeleteTask: (taskId: string) => void;
   onAddTaskGroup: (name: string) => void;
   onDeleteTaskGroup: (groupId: string) => void;
-  onAddTaskToGroup: (groupId: string, taskId: string) => void;
+  onAddTasksToGroup: (groupId: string, taskIds: string[]) => void;
   onRemoveTaskFromGroup: (groupId: string, taskId: string) => void;
+  onRenameTask: (taskId: string, name: string) => void;
+  onRenameTaskGroup: (groupId: string, name: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
   onUpdateTemplate: (id: string, name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
@@ -56,7 +58,7 @@ export default function ProjectManager({
   projects, tasks, taskGroups, templates,
   onAddProject, onUpdateProject, onDeleteProject,
   onAddTask, onDeleteTask, onAddTaskGroup, onDeleteTaskGroup,
-  onAddTaskToGroup, onRemoveTaskFromGroup,
+  onAddTasksToGroup, onRemoveTaskFromGroup, onRenameTask, onRenameTaskGroup,
   onAddTemplate, onUpdateTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
@@ -86,6 +88,12 @@ export default function ProjectManager({
   // グループへのタスク追加（複数選択）
   const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
   const [pickTaskIds, setPickTaskIds] = useState<string[]>([]);
+
+  // 名前変更
+  const [renamingTaskId, setRenamingTaskId] = useState<string | null>(null);
+  const [renameTaskValue, setRenameTaskValue] = useState("");
+  const [renamingGroupId, setRenamingGroupId] = useState<string | null>(null);
+  const [renameGroupValue, setRenameGroupValue] = useState("");
 
   function closeModal() {
     setModal(null); setEditingProject(null);
@@ -124,12 +132,32 @@ export default function ProjectManager({
 
   function handleAddToGroup(groupId: string) {
     if (pickTaskIds.length === 0) return;
-    pickTaskIds.forEach((taskId) => onAddTaskToGroup(groupId, taskId));
+    onAddTasksToGroup(groupId, pickTaskIds);
     setPickTaskIds([]); setAddingToGroup(null);
   }
 
   function togglePickTask(taskId: string) {
     setPickTaskIds((prev) => prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]);
+  }
+
+  function startRenameTask(t: Task) {
+    setRenamingTaskId(t.id); setRenameTaskValue(t.name);
+  }
+
+  function saveRenameTask() {
+    if (!renamingTaskId || !renameTaskValue.trim()) return;
+    onRenameTask(renamingTaskId, renameTaskValue.trim());
+    setRenamingTaskId(null); setRenameTaskValue("");
+  }
+
+  function startRenameGroup(g: TaskGroup) {
+    setRenamingGroupId(g.id); setRenameGroupValue(g.name);
+  }
+
+  function saveRenameGroup() {
+    if (!renamingGroupId || !renameGroupValue.trim()) return;
+    onRenameTaskGroup(renamingGroupId, renameGroupValue.trim());
+    setRenamingGroupId(null); setRenameGroupValue("");
   }
 
   function openEditTemplate(t: TaskTemplate) {
@@ -244,22 +272,40 @@ export default function ProjectManager({
                 {tasks.map((t) => {
                   const sec = getTaskTotalSeconds(t.id);
                   const inGroups = taskGroups.filter((g) => g.taskIds.includes(t.id));
+                  const isRenaming = renamingTaskId === t.id;
                   return (
-                    <div key={t.id} className="flex items-center justify-between px-4 py-2.5">
-                      <div>
-                        <span className="text-sm text-gray-700">{t.name}</span>
-                        {inGroups.length > 0 && (
-                          <div className="flex gap-1 mt-0.5">
-                            {inGroups.map((g) => (
-                              <span key={g.id} className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">{g.name}</span>
-                            ))}
+                    <div key={t.id} className="flex items-center justify-between px-4 py-2.5 gap-3">
+                      {isRenaming ? (
+                        <div className="flex-1 flex gap-2">
+                          <input
+                            value={renameTaskValue}
+                            onChange={(e) => setRenameTaskValue(e.target.value)}
+                            onKeyDown={onEnterKey(saveRenameTask)}
+                            autoFocus
+                            className="flex-1 border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-gray-500"
+                          />
+                          <button onClick={saveRenameTask} disabled={!renameTaskValue.trim()} className="text-xs text-white bg-gray-900 disabled:opacity-30 px-3 rounded-lg">保存</button>
+                          <button onClick={() => setRenamingTaskId(null)} className="text-xs text-gray-400 px-2">✕</button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="min-w-0">
+                            <span className="text-sm text-gray-700">{t.name}</span>
+                            {inGroups.length > 0 && (
+                              <div className="flex gap-1 mt-0.5 flex-wrap">
+                                {inGroups.map((g) => (
+                                  <span key={g.id} className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">{g.name}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
-                        <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
-                      </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
+                            <button onClick={() => startRenameTask(t)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
+                            <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -308,21 +354,37 @@ export default function ProjectManager({
                 const groupTasks = tasks.filter((t) => taskIds.includes(t.id));
                 const isExpanded = expandedGroup === g.id;
                 const availableTasks = tasks.filter((t) => !taskIds.includes(t.id));
+                const isRenamingGroup = renamingGroupId === g.id;
                 return (
                   <div key={g.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
-                      onClick={() => setExpandedGroup(isExpanded ? null : g.id)}>
-                      <div>
-                        <span className="text-sm font-medium text-gray-800">{g.name}</span>
-                        <span className="ml-2 text-xs text-gray-400">
-                          {groupTasks.length > 0 ? groupTasks.map((t) => t.name).join("・") : "タスクなし"}
-                        </span>
+                    {isRenamingGroup ? (
+                      <div className="flex items-center gap-2 px-4 py-3">
+                        <input
+                          value={renameGroupValue}
+                          onChange={(e) => setRenameGroupValue(e.target.value)}
+                          onKeyDown={onEnterKey(saveRenameGroup)}
+                          autoFocus
+                          className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-gray-500"
+                        />
+                        <button onClick={saveRenameGroup} disabled={!renameGroupValue.trim()} className="text-xs text-white bg-gray-900 disabled:opacity-30 px-3 py-1.5 rounded-lg">保存</button>
+                        <button onClick={() => setRenamingGroupId(null)} className="text-xs text-gray-400 px-2">✕</button>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
-                        <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                    ) : (
+                      <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
+                        onClick={() => setExpandedGroup(isExpanded ? null : g.id)}>
+                        <div>
+                          <span className="text-sm font-medium text-gray-800">{g.name}</span>
+                          <span className="ml-2 text-xs text-gray-400">
+                            {groupTasks.length > 0 ? groupTasks.map((t) => t.name).join("・") : "タスクなし"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button onClick={(e) => { e.stopPropagation(); startRenameGroup(g); }} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
+                          <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                          <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     {isExpanded && (
                       <div className="border-t border-gray-100 px-4 py-3 space-y-2 bg-gray-50">
                         {groupTasks.length > 0 && (
