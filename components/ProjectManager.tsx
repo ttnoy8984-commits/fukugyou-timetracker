@@ -42,6 +42,7 @@ interface Props {
   onDeleteProject: (id: string) => void;
   onAddTask: (projectId: string, name: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
+  onUpdateTemplate: (id: string, name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
   getProjectTotalSeconds: (projectId: string) => number;
   getTaskTotalSeconds: (taskId: string) => number;
@@ -52,7 +53,7 @@ type ModalType = "project" | "task" | "template" | "editProject" | null;
 export default function ProjectManager({
   projects, tasks, templates,
   onAddProject, onUpdateProject, onDeleteProject, onAddTask,
-  onAddTemplate, onDeleteTemplate,
+  onAddTemplate, onUpdateTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
   const [modal, setModal] = useState<ModalType>(null);
@@ -73,12 +74,28 @@ export default function ProjectManager({
   const [tplName, setTplName] = useState("");
   const [tplTaskInput, setTplTaskInput] = useState("");
   const [tplTaskNames, setTplTaskNames] = useState<string[]>([]);
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
 
   function closeModal() {
     setModal(null);
     setEditingProject(null);
     setName(""); setRate(""); setColor("#6366f1"); setTemplateId("");
     setTaskName(""); setSelectedProject("");
+    setTplName(""); setTplTaskInput(""); setTplTaskNames([]);
+    setEditingTemplateId(null);
+  }
+
+  function openEditTemplate(t: { id: string; name: string; taskNames: string[] }) {
+    setEditingTemplateId(t.id);
+    setTplName(t.name);
+    setTplTaskNames([...t.taskNames]);
+    setTplTaskInput("");
+  }
+
+  function handleSaveTemplateEdit() {
+    if (!editingTemplateId || !tplName.trim() || tplTaskNames.length === 0) return;
+    onUpdateTemplate(editingTemplateId, tplName.trim(), tplTaskNames);
+    setEditingTemplateId(null);
     setTplName(""); setTplTaskInput(""); setTplTaskNames([]);
   }
 
@@ -325,46 +342,88 @@ export default function ProjectManager({
                 {templates.length > 0 && (
                   <div className="space-y-2">
                     {templates.map((t) => (
-                      <div key={t.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
-                        <div>
-                          <div className="text-sm font-medium text-gray-800">{t.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{t.taskNames.join("・")}</div>
-                        </div>
-                        <button onClick={() => onDeleteTemplate(t.id)} className="text-gray-300 hover:text-red-400 text-xs ml-3 transition-colors">削除</button>
+                      <div key={t.id}>
+                        {editingTemplateId === t.id ? (
+                          <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
+                            <input
+                              value={tplName}
+                              onChange={(e) => setTplName(e.target.value)}
+                              placeholder="テンプレート名"
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                value={tplTaskInput}
+                                onChange={(e) => setTplTaskInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
+                                placeholder="タスクを追加してEnter"
+                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
+                              />
+                              <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-xs px-3 rounded-lg transition-colors">追加</button>
+                            </div>
+                            {tplTaskNames.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {tplTaskNames.map((n) => (
+                                  <span key={n} className="flex items-center gap-1 bg-white text-gray-700 text-xs px-2.5 py-1 rounded-full border border-gray-200">
+                                    {n}
+                                    <button onClick={() => setTplTaskNames(tplTaskNames.filter((x) => x !== n))} className="text-gray-400 hover:text-red-400">✕</button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <button onClick={() => { setEditingTemplateId(null); setTplName(""); setTplTaskNames([]); setTplTaskInput(""); }} className="flex-1 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                              <button onClick={handleSaveTemplateEdit} disabled={!tplName.trim() || tplTaskNames.length === 0} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">保存</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">{t.name}</div>
+                              <div className="text-xs text-gray-400 mt-0.5">{t.taskNames.join("・")}</div>
+                            </div>
+                            <div className="flex gap-2 ml-3">
+                              <button onClick={() => openEditTemplate(t)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
+                              <button onClick={() => onDeleteTemplate(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="border-t border-gray-100 pt-3 space-y-3">
-                  <p className="text-xs text-gray-400">新規テンプレート</p>
-                  <input
-                    value={tplName}
-                    onChange={(e) => setTplName(e.target.value)}
-                    placeholder="テンプレート名"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                  />
-                  <div className="flex gap-2">
+                {!editingTemplateId && (
+                  <div className="border-t border-gray-100 pt-3 space-y-3">
+                    <p className="text-xs text-gray-400">新規テンプレート</p>
                     <input
-                      value={tplTaskInput}
-                      onChange={(e) => setTplTaskInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
-                      placeholder="タスク名を入力してEnter"
-                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                      value={tplName}
+                      onChange={(e) => setTplName(e.target.value)}
+                      placeholder="テンプレート名"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
                     />
-                    <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-sm px-4 rounded-xl transition-colors">追加</button>
-                  </div>
-                  {tplTaskNames.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {tplTaskNames.map((t) => (
-                        <span key={t} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-                          {t}
-                          <button onClick={() => setTplTaskNames(tplTaskNames.filter((n) => n !== t))} className="text-gray-400 hover:text-red-400">✕</button>
-                        </span>
-                      ))}
+                    <div className="flex gap-2">
+                      <input
+                        value={tplTaskInput}
+                        onChange={(e) => setTplTaskInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
+                        placeholder="タスク名を入力してEnter"
+                        className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                      />
+                      <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-sm px-4 rounded-xl transition-colors">追加</button>
                     </div>
-                  )}
-                  <button onClick={handleSaveTemplate} disabled={!tplName.trim() || tplTaskNames.length === 0} className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
-                </div>
+                    {tplTaskNames.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {tplTaskNames.map((n) => (
+                          <span key={n} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+                            {n}
+                            <button onClick={() => setTplTaskNames(tplTaskNames.filter((x) => x !== n))} className="text-gray-400 hover:text-red-400">✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={handleSaveTemplate} disabled={!tplName.trim() || tplTaskNames.length === 0} className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
+                  </div>
+                )}
                 <button onClick={closeModal} className="w-full border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">閉じる</button>
               </>
             )}

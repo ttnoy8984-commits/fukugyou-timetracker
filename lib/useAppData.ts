@@ -111,6 +111,16 @@ export function useAppData() {
     [data, persist]
   );
 
+  const updateTemplate = useCallback(
+    (id: string, name: string, taskNames: string[]) => {
+      persist({
+        ...data,
+        templates: (data.templates ?? []).map((t) => t.id === id ? { ...t, name, taskNames } : t),
+      });
+    },
+    [data, persist]
+  );
+
   const startTimer = useCallback(
     (projectId: string | null, taskId: string | null, note: string) => {
       if (activeEntry) return;
@@ -311,6 +321,7 @@ export function useAppData() {
     getProjectTotalSeconds,
     getTaskTotalSeconds,
     assignEntry,
+    updateTemplate,
     getMonthlySummary,
     getProjectSummaries,
   };
