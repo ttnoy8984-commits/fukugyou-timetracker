@@ -78,9 +78,10 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   function handleSave() {
     if (!editingEntry) return;
     const s = new Date(`${date}T${startTime}`);
-    const en = new Date(`${date}T${endTime}`);
+    let en = new Date(`${date}T${endTime}`);
     if (isNaN(s.getTime()) || isNaN(en.getTime())) { setError("時刻が正しくありません"); return; }
-    if (en <= s) { setError("終了は開始より後にしてください"); return; }
+    // 終了時刻が開始時刻以前なら日を跨いだとみなす
+    if (en <= s) en = new Date(en.getTime() + 24 * 60 * 60 * 1000);
     onUpdate(editingEntry.id, editProjectId || null, editTaskId || null, date, startTime, endTime, note);
     setEditingEntry(null);
   }
@@ -88,8 +89,9 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   const previewDuration = (() => {
     if (!startTime || !endTime || !date) return null;
     const s = new Date(`${date}T${startTime}`);
-    const e = new Date(`${date}T${endTime}`);
-    if (isNaN(s.getTime()) || isNaN(e.getTime()) || e <= s) return null;
+    let e = new Date(`${date}T${endTime}`);
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+    if (e <= s) e = new Date(e.getTime() + 24 * 60 * 60 * 1000);
     return formatDuration(Math.floor((e.getTime() - s.getTime()) / 1000));
   })();
 

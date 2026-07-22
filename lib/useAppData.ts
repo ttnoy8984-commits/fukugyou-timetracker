@@ -272,9 +272,13 @@ export function useAppData() {
 
   const updateEntry = useCallback(
     (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => {
-      const startISO = new Date(`${date}T${startTime}`).toISOString();
-      const endISO = new Date(`${date}T${endTime}`).toISOString();
-      const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
+      const start = new Date(`${date}T${startTime}`);
+      let end = new Date(`${date}T${endTime}`);
+      // 終了時刻が開始時刻以前なら日を跨いだとみなす
+      if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+      const durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
       persist({
         ...data,
         entries: data.entries.map((e) =>
@@ -287,9 +291,13 @@ export function useAppData() {
 
   const addManualEntry = useCallback(
     (projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => {
-      const startISO = new Date(`${date}T${startTime}`).toISOString();
-      const endISO = new Date(`${date}T${endTime}`).toISOString();
-      const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
+      const start = new Date(`${date}T${startTime}`);
+      let end = new Date(`${date}T${endTime}`);
+      // 終了時刻が開始時刻以前なら日を跨いだとみなす
+      if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+      const durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
       const entry = {
         id: crypto.randomUUID(),
         projectId,

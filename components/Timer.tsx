@@ -80,25 +80,21 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
       return;
     }
     const start = new Date(`${mDate}T${mStart}`);
-    const end = new Date(`${mDate}T${mEnd}`);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    if (isNaN(start.getTime()) || isNaN(new Date(`${mDate}T${mEnd}`).getTime())) {
       setMError("時刻の形式が正しくありません");
-      return;
-    }
-    if (end <= start) {
-      setMError("終了時刻は開始時刻より後にしてください");
       return;
     }
     onManualAdd(mProjectId || null, mTaskId || null, mDate, mStart, mEnd, mNote);
     setMStart(""); setMEnd(""); setMNote("");
   }
 
-  // 入力から所要時間を表示
+  // 入力から所要時間を表示（終了時刻が開始時刻以前なら日を跨いだとみなす）
   const previewDuration = (() => {
     if (!mStart || !mEnd || !mDate) return null;
     const start = new Date(`${mDate}T${mStart}`);
-    const end = new Date(`${mDate}T${mEnd}`);
-    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return null;
+    let end = new Date(`${mDate}T${mEnd}`);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+    if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
     return formatDuration(Math.floor((end.getTime() - start.getTime()) / 1000));
   })();
 
