@@ -41,8 +41,8 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   const [mNote, setMNote] = useState("");
   const [mError, setMError] = useState("");
 
-  const filteredTasks = tasks.filter((t) => t.projectId === projectId);
-  const mFilteredTasks = tasks.filter((t) => t.projectId === mProjectId);
+  const filteredTasks = tasks;
+  const mFilteredTasks = tasks;
   const activeProject = projects.find((p) => p.id === activeEntry?.projectId);
   const activeTask = tasks.find((t) => t.id === activeEntry?.taskId);
 
@@ -168,8 +168,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
               <select
                 value={taskId}
                 onChange={(e) => setTaskId(e.target.value)}
-                disabled={!projectId}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
               >
                 <option value="">タスク（後で設定可）</option>
                 {filteredTasks.map((t) => (
@@ -209,10 +208,9 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
           <select
             value={mTaskId}
             onChange={(e) => setMTaskId(e.target.value)}
-            disabled={!mProjectId}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
           >
-            <option value="">タスクを選択</option>
+            <option value="">タスク（後で設定可）</option>
             {mFilteredTasks.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}

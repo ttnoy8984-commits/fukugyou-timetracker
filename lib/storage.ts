@@ -1,8 +1,8 @@
-import { AppData, Project, Task, TaskTemplate, TimeEntry } from "./types";
+import { AppData, Project, Task, TaskGroup, TaskTemplate, TimeEntry } from "./types";
 
 const KEY = "fukugyou_data";
 
-const defaultData: AppData = { projects: [], tasks: [], entries: [], templates: [] };
+const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], entries: [], templates: [] };
 
 export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
@@ -10,12 +10,42 @@ export function loadData(): AppData {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultData;
     const parsed = JSON.parse(raw);
+
     // 旧データ（hourlyRate）を新形式（contractAmount）に変換
     const projects = (parsed.projects ?? []).map((p: Record<string, unknown>) => ({
       ...p,
       contractAmount: p.contractAmount ?? p.hourlyRate ?? 0,
     }));
-    return { ...defaultData, ...parsed, projects };
+
+    // 旧タスク（projectId付き）を共通タスクに昇格。名前重複は1つに統合しつつentryのtaskIdを付け替え
+    const rawTasks: (Task & { projectId?: string })[] = parsed.tasks ?? [];
+    const nameToId = new Map<string, string>();
+    const idRemap = new Map<string, string>(); // 旧ID → 新（代表）ID
+    const tasks: Task[] = [];
+    for (const t of rawTasks) {
+      const key = t.name.trim();
+      if (nameToId.has(key)) {
+        idRemap.set(t.id, nameToId.get(key)!);
+      } else {
+        nameToId.set(key, t.id);
+        const { projectId: _p, ...rest } = t;
+        void _p;
+        tasks.push(rest);
+      }
+    }
+    const entries = (parsed.entries ?? []).map((e: Record<string, unknown>) => ({
+      ...e,
+      taskId: e.taskId && idRemap.has(e.taskId as string) ? idRemap.get(e.taskId as string) : e.taskId,
+    }));
+
+    return {
+      ...defaultData,
+      ...parsed,
+      projects,
+      tasks,
+      taskGroups: parsed.taskGroups ?? [],
+      entries,
+    };
   } catch {
     return defaultData;
   }
@@ -35,10 +65,18 @@ export function createProject(name: string, contractAmount: number, color: strin
   };
 }
 
-export function createTask(projectId: string, name: string): Task {
+export function createTask(name: string, groupId?: string): Task {
   return {
     id: crypto.randomUUID(),
-    projectId,
+    name,
+    groupId,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function createTaskGroup(name: string): TaskGroup {
+  return {
+    id: crypto.randomUUID(),
     name,
     createdAt: new Date().toISOString(),
   };

@@ -7,13 +7,14 @@ import {
   createEntry,
   createProject,
   createTask,
+  createTaskGroup,
   createTemplate,
   loadData,
   saveData,
 } from "./storage";
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>({ projects: [], tasks: [], entries: [], templates: [] });
+  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], entries: [], templates: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -79,7 +80,6 @@ export function useAppData() {
       persist({
         ...data,
         projects: data.projects.filter((p) => p.id !== id),
-        tasks: data.tasks.filter((t) => t.projectId !== id),
         entries: data.entries.filter((e) => e.projectId !== id),
       });
     },
@@ -87,8 +87,8 @@ export function useAppData() {
   );
 
   const addTask = useCallback(
-    (projectId: string, name: string) => {
-      const t = createTask(projectId, name);
+    (name: string, groupId?: string) => {
+      const t = createTask(name, groupId);
       persist({ ...data, tasks: [...data.tasks, t] });
       return t;
     },
@@ -98,6 +98,26 @@ export function useAppData() {
   const deleteTask = useCallback(
     (taskId: string) => {
       persist({ ...data, tasks: data.tasks.filter((t) => t.id !== taskId) });
+    },
+    [data, persist]
+  );
+
+  const addTaskGroup = useCallback(
+    (name: string) => {
+      const g = createTaskGroup(name);
+      persist({ ...data, taskGroups: [...(data.taskGroups ?? []), g] });
+      return g;
+    },
+    [data, persist]
+  );
+
+  const deleteTaskGroup = useCallback(
+    (groupId: string) => {
+      persist({
+        ...data,
+        taskGroups: (data.taskGroups ?? []).filter((g) => g.id !== groupId),
+        tasks: data.tasks.map((t) => t.groupId === groupId ? { ...t, groupId: undefined } : t),
+      });
     },
     [data, persist]
   );
@@ -316,6 +336,8 @@ export function useAppData() {
     deleteProject,
     addTask,
     deleteTask,
+    addTaskGroup,
+    deleteTaskGroup,
     addTemplate,
     deleteTemplate,
     startTimer,

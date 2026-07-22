@@ -8,7 +8,14 @@ export interface Project {
 
 export interface Task {
   id: string;
-  projectId: string;
+  name: string;
+  groupId?: string;
+  projectId?: string; // 旧データ互換用
+  createdAt: string;
+}
+
+export interface TaskGroup {
+  id: string;
   name: string;
   createdAt: string;
 }
@@ -34,6 +41,7 @@ export interface TaskTemplate {
 export interface AppData {
   projects: Project[];
   tasks: Task[];
+  taskGroups: TaskGroup[];
   entries: TimeEntry[];
   templates: TaskTemplate[];
 }

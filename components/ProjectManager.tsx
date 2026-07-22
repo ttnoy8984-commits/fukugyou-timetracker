@@ -1,33 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Project, Task, TaskTemplate } from "@/lib/types";
+import { Project, Task, TaskGroup, TaskTemplate } from "@/lib/types";
 import { calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
 const PRESET_COLORS = [
-  "#ef4444", // 赤
-  "#f97316", // オレンジ
-  "#eab308", // 黄
-  "#22c55e", // 緑
-  "#14b8a6", // ティール
-  "#3b82f6", // 青
-  "#6366f1", // インディゴ
-  "#a855f7", // 紫
-  "#ec4899", // ピンク
-  "#64748b", // グレー
+  "#ef4444","#f97316","#eab308","#22c55e","#14b8a6",
+  "#3b82f6","#6366f1","#a855f7","#ec4899","#64748b",
 ];
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
       {PRESET_COLORS.map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
+        <button key={c} type="button" onClick={() => onChange(c)}
           className={`w-8 h-8 rounded-full border-2 transition-transform ${value === c ? "border-gray-800 scale-110" : "border-transparent"}`}
-          style={{ backgroundColor: c }}
-        />
+          style={{ backgroundColor: c }} />
       ))}
     </div>
   );
@@ -36,12 +24,15 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
 interface Props {
   projects: Project[];
   tasks: Task[];
+  taskGroups: TaskGroup[];
   templates: TaskTemplate[];
   onAddProject: (name: string, contractAmount: number, color: string, templateId?: string) => void;
   onUpdateProject: (id: string, name: string, contractAmount: number, color: string) => void;
   onDeleteProject: (id: string) => void;
-  onAddTask: (projectId: string, name: string) => void;
+  onAddTask: (name: string, groupId?: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onAddTaskGroup: (name: string) => void;
+  onDeleteTaskGroup: (groupId: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
   onUpdateTemplate: (id: string, name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
@@ -49,28 +40,26 @@ interface Props {
   getTaskTotalSeconds: (taskId: string) => number;
 }
 
-type ModalType = "project" | "task" | "template" | "editProject" | null;
-
+type Section = "projects" | "tasks";
+type ModalType = "project" | "editProject" | "template" | null;
 
 export default function ProjectManager({
-  projects, tasks, templates,
-  onAddProject, onUpdateProject, onDeleteProject, onAddTask, onDeleteTask,
+  projects, tasks, taskGroups, templates,
+  onAddProject, onUpdateProject, onDeleteProject,
+  onAddTask, onDeleteTask, onAddTaskGroup, onDeleteTaskGroup,
   onAddTemplate, onUpdateTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
+  const [section, setSection] = useState<Section>("projects");
   const [modal, setModal] = useState<ModalType>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  // 案件追加フォーム
+  // 案件フォーム
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
   const [color, setColor] = useState("#6366f1");
   const [templateId, setTemplateId] = useState("");
-
-  // タスク追加フォーム
-  const [taskName, setTaskName] = useState("");
-  const [selectedProject, setSelectedProject] = useState("");
 
   // テンプレートフォーム
   const [tplName, setTplName] = useState("");
@@ -78,45 +67,21 @@ export default function ProjectManager({
   const [tplTaskNames, setTplTaskNames] = useState<string[]>([]);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
 
-  // インラインタスク追加
-  const [addingTaskForProject, setAddingTaskForProject] = useState<string | null>(null);
-  const [inlineTaskName, setInlineTaskName] = useState("");
+  // タスク追加
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskGroupId, setNewTaskGroupId] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");
+  const [addingGroup, setAddingGroup] = useState(false);
 
   function closeModal() {
-    setModal(null);
-    setEditingProject(null);
+    setModal(null); setEditingProject(null);
     setName(""); setRate(""); setColor("#6366f1"); setTemplateId("");
-    setTaskName(""); setSelectedProject("");
-    setTplName(""); setTplTaskInput(""); setTplTaskNames([]);
-    setEditingTemplateId(null);
-  }
-
-  function openEditTemplate(t: { id: string; name: string; taskNames: string[] }) {
-    setEditingTemplateId(t.id);
-    setTplName(t.name);
-    setTplTaskNames([...t.taskNames]);
-    setTplTaskInput("");
-  }
-
-  function handleSaveTemplateEdit() {
-    if (!editingTemplateId || !tplName.trim() || tplTaskNames.length === 0) return;
-    onUpdateTemplate(editingTemplateId, tplName.trim(), tplTaskNames);
-    setEditingTemplateId(null);
-    setTplName(""); setTplTaskInput(""); setTplTaskNames([]);
+    setTplName(""); setTplTaskInput(""); setTplTaskNames([]); setEditingTemplateId(null);
   }
 
   function openEditProject(p: Project) {
-    setEditingProject(p);
-    setName(p.name);
-    setRate(String(p.contractAmount));
-    setColor(p.color);
+    setEditingProject(p); setName(p.name); setRate(String(p.contractAmount)); setColor(p.color);
     setModal("editProject");
-  }
-
-  function handleUpdateProject() {
-    if (!editingProject || !name.trim() || !rate) return;
-    onUpdateProject(editingProject.id, name.trim(), Number(rate), color);
-    closeModal();
   }
 
   function handleAddProject() {
@@ -125,177 +90,209 @@ export default function ProjectManager({
     closeModal();
   }
 
-  function handleAddTask() {
-    if (!selectedProject || !taskName.trim()) return;
-    onAddTask(selectedProject, taskName.trim());
-    setTaskName("");
+  function handleUpdateProject() {
+    if (!editingProject || !name.trim() || !rate) return;
+    onUpdateProject(editingProject.id, name.trim(), Number(rate), color);
+    closeModal();
+  }
+
+  function openEditTemplate(t: TaskTemplate) {
+    setEditingTemplateId(t.id); setTplName(t.name); setTplTaskNames([...t.taskNames]); setTplTaskInput("");
+  }
+
+  function handleSaveTemplate() {
+    if (!tplName.trim() || tplTaskNames.length === 0) return;
+    onAddTemplate(tplName.trim(), tplTaskNames); closeModal();
+  }
+
+  function handleSaveTemplateEdit() {
+    if (!editingTemplateId || !tplName.trim() || tplTaskNames.length === 0) return;
+    onUpdateTemplate(editingTemplateId, tplName.trim(), tplTaskNames);
+    setEditingTemplateId(null); setTplName(""); setTplTaskNames([]); setTplTaskInput("");
   }
 
   function handleAddTplTask() {
     const t = tplTaskInput.trim();
     if (!t || tplTaskNames.includes(t)) return;
-    setTplTaskNames([...tplTaskNames, t]);
-    setTplTaskInput("");
+    setTplTaskNames([...tplTaskNames, t]); setTplTaskInput("");
   }
 
-  function handleSaveTemplate() {
-    if (!tplName.trim() || tplTaskNames.length === 0) return;
-    onAddTemplate(tplName.trim(), tplTaskNames);
-    closeModal();
+  function handleAddTask() {
+    if (!newTaskName.trim()) return;
+    onAddTask(newTaskName.trim(), newTaskGroupId || undefined);
+    setNewTaskName(""); setNewTaskGroupId("");
+  }
+
+  function handleAddGroup() {
+    if (!newGroupName.trim()) return;
+    onAddTaskGroup(newGroupName.trim());
+    setNewGroupName(""); setAddingGroup(false);
+  }
+
+  // グループごとにタスクをまとめる
+  const grouped: { group: TaskGroup | null; tasks: Task[] }[] = [];
+  const ungrouped = tasks.filter((t) => !t.groupId);
+  if (ungrouped.length > 0) grouped.push({ group: null, tasks: ungrouped });
+  for (const g of taskGroups) {
+    const gt = tasks.filter((t) => t.groupId === g.id);
+    grouped.push({ group: g, tasks: gt });
   }
 
   return (
     <div className="space-y-4">
-      {/* アクションボタン */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setModal("project")}
-          className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
-        >
-          + 案件を追加
+      {/* セクション切替 */}
+      <div className="flex gap-1 bg-white border border-gray-100 rounded-xl p-1">
+        <button onClick={() => setSection("projects")}
+          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "projects" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"}`}>
+          案件
         </button>
-        <button
-          onClick={() => setModal("task")}
-          className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium py-3 rounded-xl transition-colors"
-        >
-          + タスクを追加
-        </button>
-        <button
-          onClick={() => setModal("template")}
-          className="border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-3 rounded-xl transition-colors"
-        >
-          テンプレート
+        <button onClick={() => setSection("tasks")}
+          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "tasks" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"}`}>
+          タスク
         </button>
       </div>
 
-      {/* 案件一覧 */}
-      {projects.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-          <p className="text-sm text-gray-400">案件がありません</p>
-          <p className="text-xs text-gray-300 mt-1">「案件を追加」から登録してください</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          {projects.map((p, i) => {
-            const projectTasks = tasks.filter((t) => t.projectId === p.id);
-            const totalSeconds = getProjectTotalSeconds(p.id);
-            const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
-            const isExpanded = expandedProject === p.id;
-            return (
-              <div key={p.id} className={i > 0 ? "border-t border-gray-100" : ""}>
-                <div
-                  className="flex items-center gap-3 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => setExpandedProject(isExpanded ? null : p.id)}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-800">{p.name}</div>
-                    <div className="text-xs text-gray-400">契約 ¥{p.contractAmount.toLocaleString()}</div>
-                  </div>
-                  <div className="text-right">
-                    {totalSeconds > 0 ? (
-                      <>
-                        <div className="text-sm text-gray-700">¥{Math.round(effectiveRate).toLocaleString()}/h</div>
-                        <div className="text-xs text-gray-400">{formatDuration(totalSeconds)}</div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-gray-400">未作業</div>
+      {/* ===== 案件セクション ===== */}
+      {section === "projects" && (
+        <>
+          <div className="flex gap-2">
+            <button onClick={() => setModal("project")}
+              className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors">
+              + 案件を追加
+            </button>
+            <button onClick={() => setModal("template")}
+              className="border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-3 rounded-xl transition-colors">
+              テンプレート
+            </button>
+          </div>
+
+          {projects.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
+              <p className="text-sm text-gray-400">案件がありません</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {projects.map((p, i) => {
+                const totalSeconds = getProjectTotalSeconds(p.id);
+                const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
+                const isExpanded = expandedProject === p.id;
+                return (
+                  <div key={p.id} className={i > 0 ? "border-t border-gray-100" : ""}>
+                    <div className="flex items-center gap-3 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-800">{p.name}</div>
+                        <div className="text-xs text-gray-400">契約 ¥{p.contractAmount.toLocaleString()}</div>
+                      </div>
+                      <div className="text-right">
+                        {totalSeconds > 0 ? (
+                          <>
+                            <div className="text-sm text-gray-700">¥{Math.round(effectiveRate).toLocaleString()}/h</div>
+                            <div className="text-xs text-gray-400">{formatDuration(totalSeconds)}</div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-400">未作業</div>
+                        )}
+                      </div>
+                      <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
+                        <div className="flex gap-4">
+                          <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
+                          <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
-                </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
-                {isExpanded && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">タスク</p>
-                    {projectTasks.length === 0 ? (
-                      <p className="text-xs text-gray-400">タスクなし</p>
-                    ) : (
-                      projectTasks.map((t) => {
-                        const taskSec = getTaskTotalSeconds(t.id);
+      {/* ===== タスクセクション ===== */}
+      {section === "tasks" && (
+        <>
+          {/* タスク追加 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">タスクを追加</p>
+            <div className="flex gap-2">
+              <input value={newTaskName} onChange={(e) => setNewTaskName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }}
+                placeholder="タスク名"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400" />
+              <select value={newTaskGroupId} onChange={(e) => setNewTaskGroupId(e.target.value)}
+                className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400">
+                <option value="">グループなし</option>
+                {taskGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <button onClick={handleAddTask} disabled={!newTaskName.trim()}
+                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">
+                追加
+              </button>
+            </div>
+          </div>
+
+          {/* グループ管理 */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">グループ</span>
+            {addingGroup ? (
+              <div className="flex gap-2">
+                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddGroup(); if (e.key === "Escape") { setAddingGroup(false); setNewGroupName(""); } }}
+                  placeholder="グループ名" autoFocus
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-gray-400" />
+                <button onClick={handleAddGroup} disabled={!newGroupName.trim()}
+                  className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-30">追加</button>
+                <button onClick={() => { setAddingGroup(false); setNewGroupName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+              </div>
+            ) : (
+              <button onClick={() => setAddingGroup(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">+ グループを追加</button>
+            )}
+          </div>
+
+          {/* タスク一覧 */}
+          {tasks.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
+              <p className="text-sm text-gray-400">タスクがありません</p>
+              <p className="text-xs text-gray-300 mt-1">上のフォームから追加してください</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {grouped.map(({ group, tasks: gt }) => (
+                <div key={group?.id ?? "__ungrouped"} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500">{group?.name ?? "グループなし"}</span>
+                    {group && (
+                      <button onClick={() => onDeleteTaskGroup(group.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">グループを削除</button>
+                    )}
+                  </div>
+                  {gt.length === 0 ? (
+                    <p className="px-4 py-3 text-xs text-gray-300">タスクなし</p>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {gt.map((t) => {
+                        const sec = getTaskTotalSeconds(t.id);
                         return (
-                          <div key={t.id}>
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs text-gray-700">{t.name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-mono text-gray-400">
-                                  {taskSec > 0 ? formatDuration(taskSec) : "未作業"}
-                                </span>
-                                <button
-                                  onClick={() => onDeleteTask(t.id)}
-                                  className="text-xs text-gray-300 hover:text-red-400 transition-colors"
-                                >
-                                  削除
-                                </button>
-                              </div>
+                          <div key={t.id} className="flex items-center justify-between px-4 py-3">
+                            <span className="text-sm text-gray-700">{t.name}</span>
+                            <div className="flex items-center gap-3">
+                              {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
+                              <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
                             </div>
-                            {taskSec > 0 && totalSeconds > 0 && (
-                              <div className="w-full bg-gray-200 rounded-full h-1">
-                                <div
-                                  className="h-1 rounded-full"
-                                  style={{ backgroundColor: p.color, opacity: 0.6, width: `${(taskSec / totalSeconds) * 100}%` }}
-                                />
-                              </div>
-                            )}
                           </div>
                         );
-                      })
-                    )}
-
-                    {/* インラインタスク追加 */}
-                    {addingTaskForProject === p.id ? (
-                      <div className="flex gap-2 pt-1">
-                        <input
-                          value={inlineTaskName}
-                          onChange={(e) => setInlineTaskName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && inlineTaskName.trim()) {
-                              onAddTask(p.id, inlineTaskName.trim());
-                              setInlineTaskName("");
-                            }
-                            if (e.key === "Escape") { setAddingTaskForProject(null); setInlineTaskName(""); }
-                          }}
-                          placeholder="タスク名"
-                          autoFocus
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-gray-400 bg-white"
-                        />
-                        <button
-                          onClick={() => { if (inlineTaskName.trim()) { onAddTask(p.id, inlineTaskName.trim()); setInlineTaskName(""); } }}
-                          disabled={!inlineTaskName.trim()}
-                          className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors"
-                        >
-                          追加
-                        </button>
-                        <button
-                          onClick={() => { setAddingTaskForProject(null); setInlineTaskName(""); }}
-                          className="text-gray-400 hover:text-gray-600 text-xs px-2"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setAddingTaskForProject(p.id); setInlineTaskName(""); }}
-                        className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-                      >
-                        + タスクを追加
-                      </button>
-                    )}
-
-                    <div className="flex gap-4 pt-1 border-t border-gray-200">
-                      <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors pt-2">
-                        案件を編集
-                      </button>
-                      <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors pt-2">
-                        削除
-                      </button>
+                      })}
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* モーダル */}
@@ -307,34 +304,19 @@ export default function ProjectManager({
             {modal === "project" && (
               <>
                 <h3 className="text-base font-semibold text-gray-900">案件を追加</h3>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="案件名"
-                  autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                />
-                <input
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                  placeholder="契約金額（円）"
-                  type="number"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="案件名" autoFocus
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                <input value={rate} onChange={(e) => setRate(e.target.value)} placeholder="契約金額（円）" type="number"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
                 <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
                 {templates.length > 0 && (
-                  <select
-                    value={templateId}
-                    onChange={(e) => setTemplateId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                  >
+                  <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
                     <option value="">テンプレートを使用しない</option>
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}（{t.taskNames.join("・")}）</option>
-                    ))}
+                    {templates.map((t) => <option key={t.id} value={t.id}>{t.name}（{t.taskNames.join("・")}）</option>)}
                   </select>
                 )}
                 <div className="flex gap-2 pt-1">
@@ -344,37 +326,22 @@ export default function ProjectManager({
               </>
             )}
 
-            {/* タスク追加 */}
-            {modal === "task" && (
+            {/* 案件編集 */}
+            {modal === "editProject" && (
               <>
-                <h3 className="text-base font-semibold text-gray-900">タスクを追加</h3>
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                >
-                  <option value="">案件を選択</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <div className="flex gap-2">
-                  <input
-                    value={taskName}
-                    onChange={(e) => setTaskName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }}
-                    placeholder="タスク名"
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                  />
-                  <button
-                    onClick={handleAddTask}
-                    disabled={!selectedProject || !taskName.trim()}
-                    className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-5 rounded-xl transition-colors"
-                  >
-                    追加
-                  </button>
+                <h3 className="text-base font-semibold text-gray-900">案件を編集</h3>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="案件名" autoFocus
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                <input value={rate} onChange={(e) => setRate(e.target.value)} placeholder="契約金額（円）" type="number"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-500">カラー</label>
+                  <ColorPicker value={color} onChange={setColor} />
                 </div>
-                <button onClick={closeModal} className="w-full border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">閉じる</button>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
+                  <button onClick={handleUpdateProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
+                </div>
               </>
             )}
 
@@ -388,20 +355,13 @@ export default function ProjectManager({
                       <div key={t.id}>
                         {editingTemplateId === t.id ? (
                           <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
-                            <input
-                              value={tplName}
-                              onChange={(e) => setTplName(e.target.value)}
-                              placeholder="テンプレート名"
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-                            />
+                            <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="テンプレート名"
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
                             <div className="flex gap-2">
-                              <input
-                                value={tplTaskInput}
-                                onChange={(e) => setTplTaskInput(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
+                              <input value={tplTaskInput} onChange={(e) => setTplTaskInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); } }}
                                 placeholder="タスクを追加してEnter"
-                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-                              />
+                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
                               <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-xs px-3 rounded-lg transition-colors">追加</button>
                             </div>
                             {tplTaskNames.length > 0 && (
@@ -415,8 +375,10 @@ export default function ProjectManager({
                               </div>
                             )}
                             <div className="flex gap-2">
-                              <button onClick={() => { setEditingTemplateId(null); setTplName(""); setTplTaskNames([]); setTplTaskInput(""); }} className="flex-1 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
-                              <button onClick={handleSaveTemplateEdit} disabled={!tplName.trim() || tplTaskNames.length === 0} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">保存</button>
+                              <button onClick={() => { setEditingTemplateId(null); setTplName(""); setTplTaskNames([]); setTplTaskInput(""); }}
+                                className="flex-1 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                              <button onClick={handleSaveTemplateEdit} disabled={!tplName.trim() || tplTaskNames.length === 0}
+                                className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">保存</button>
                             </div>
                           </div>
                         ) : (
@@ -438,20 +400,13 @@ export default function ProjectManager({
                 {!editingTemplateId && (
                   <div className="border-t border-gray-100 pt-3 space-y-3">
                     <p className="text-xs text-gray-400">新規テンプレート</p>
-                    <input
-                      value={tplName}
-                      onChange={(e) => setTplName(e.target.value)}
-                      placeholder="テンプレート名"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                    />
+                    <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="テンプレート名"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
                     <div className="flex gap-2">
-                      <input
-                        value={tplTaskInput}
-                        onChange={(e) => setTplTaskInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); }}}
+                      <input value={tplTaskInput} onChange={(e) => setTplTaskInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); } }}
                         placeholder="タスク名を入力してEnter"
-                        className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                      />
+                        className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
                       <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-sm px-4 rounded-xl transition-colors">追加</button>
                     </div>
                     {tplTaskNames.length > 0 && (
@@ -464,39 +419,11 @@ export default function ProjectManager({
                         ))}
                       </div>
                     )}
-                    <button onClick={handleSaveTemplate} disabled={!tplName.trim() || tplTaskNames.length === 0} className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
+                    <button onClick={handleSaveTemplate} disabled={!tplName.trim() || tplTaskNames.length === 0}
+                      className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
                   </div>
                 )}
                 <button onClick={closeModal} className="w-full border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">閉じる</button>
-              </>
-            )}
-
-            {/* 案件編集 */}
-            {modal === "editProject" && (
-              <>
-                <h3 className="text-base font-semibold text-gray-900">案件を編集</h3>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="案件名"
-                  autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                />
-                <input
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                  placeholder="契約金額（円）"
-                  type="number"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
-                />
-                <div className="space-y-1">
-                  <label className="text-sm text-gray-500">カラー</label>
-                  <ColorPicker value={color} onChange={setColor} />
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
-                  <button onClick={handleUpdateProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
-                </div>
               </>
             )}
           </div>

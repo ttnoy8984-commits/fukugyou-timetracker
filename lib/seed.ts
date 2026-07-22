@@ -62,7 +62,7 @@ export function loadSeedData() {
     makeEntry("e15", "p2", "t6", "20", 10, 1, ""),
   ];
 
-  const data: AppData = { projects, tasks, entries, templates };
+  const data: AppData = { projects, tasks, taskGroups: [], entries, templates };
   saveData(data);
   return data;
 }

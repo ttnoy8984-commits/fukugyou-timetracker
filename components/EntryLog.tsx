@@ -93,7 +93,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     return formatDuration(Math.floor((e.getTime() - s.getTime()) / 1000));
   })();
 
-  const editFilteredTasks = editProjectId ? tasks.filter((t) => t.projectId === editProjectId) : tasks;
+  const editFilteredTasks = tasks;
 
   return (
     <>
