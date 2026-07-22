@@ -300,9 +300,10 @@ export default function ProjectManager({
           ) : (
             <div className="space-y-2">
               {taskGroups.map((g) => {
-                const groupTasks = tasks.filter((t) => g.taskIds.includes(t.id));
+                const taskIds = g.taskIds ?? [];
+                const groupTasks = tasks.filter((t) => taskIds.includes(t.id));
                 const isExpanded = expandedGroup === g.id;
-                const availableTasks = tasks.filter((t) => !g.taskIds.includes(t.id));
+                const availableTasks = tasks.filter((t) => !taskIds.includes(t.id));
                 return (
                   <div key={g.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"

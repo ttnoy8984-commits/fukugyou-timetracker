@@ -38,12 +38,17 @@ export function loadData(): AppData {
       taskId: e.taskId && idRemap.has(e.taskId as string) ? idRemap.get(e.taskId as string) : e.taskId,
     }));
 
+    const taskGroups = (parsed.taskGroups ?? []).map((g: Record<string, unknown>) => ({
+      ...g,
+      taskIds: Array.isArray(g.taskIds) ? g.taskIds : [],
+    }));
+
     return {
       ...defaultData,
       ...parsed,
       projects,
       tasks,
-      taskGroups: parsed.taskGroups ?? [],
+      taskGroups,
       entries,
     };
   } catch {
