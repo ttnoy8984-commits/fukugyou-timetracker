@@ -68,7 +68,9 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     setEditTaskId(e.taskId ?? "");
     setDate(e.date);
     const start = new Date(e.startTime);
-    const end = new Date(e.endTime!);
+    // 終了時刻は「開始＋実働時間」で計算する（一時停止分を含む実時計の終了時刻を使うと、
+    // そのまま保存した際に休憩時間が無視されて上書きされてしまうため）
+    const end = new Date(start.getTime() + e.durationSeconds * 1000);
     setStartTime(`${String(start.getHours()).padStart(2,"0")}:${String(start.getMinutes()).padStart(2,"0")}`);
     setEndTime(`${String(end.getHours()).padStart(2,"0")}:${String(end.getMinutes()).padStart(2,"0")}`);
     setNote(e.note);
