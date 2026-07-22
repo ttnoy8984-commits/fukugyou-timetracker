@@ -6,10 +6,15 @@ export function loadSeedData() {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
 
+  const clients = [
+    { id: "c1", name: "株式会社サンプル", createdAt: `${y}-${m}-01T00:00:00.000Z` },
+    { id: "c2", name: "個人クライアントB", createdAt: `${y}-${m}-01T00:00:00.000Z` },
+  ];
+
   const projects = [
-    { id: "p1", name: "YouTube切り抜き編集", contractAmount: 30000, color: "#ef4444", createdAt: `${y}-${m}-01T00:00:00.000Z` },
-    { id: "p2", name: "ライター案件A", contractAmount: 50000, color: "#6366f1", createdAt: `${y}-${m}-01T00:00:00.000Z` },
-    { id: "p3", name: "SNS運用サポート", contractAmount: 20000, color: "#10b981", createdAt: `${y}-${m}-01T00:00:00.000Z` },
+    { id: "p1", name: "YouTube切り抜き編集", contractAmount: 30000, taxIncluded: true, clientId: "c1", completedAt: null, color: "#ef4444", createdAt: `${y}-${m}-01T00:00:00.000Z` },
+    { id: "p2", name: "ライター案件A", contractAmount: 50000, taxIncluded: true, clientId: "c2", completedAt: null, color: "#6366f1", createdAt: `${y}-${m}-01T00:00:00.000Z` },
+    { id: "p3", name: "SNS運用サポート", contractAmount: 20000, taxIncluded: false, clientId: null, completedAt: null, color: "#10b981", createdAt: `${y}-${m}-01T00:00:00.000Z` },
   ];
 
   const tasks = [
@@ -62,7 +67,7 @@ export function loadSeedData() {
     makeEntry("e15", "p2", "t6", "20", 10, 1, ""),
   ];
 
-  const data: AppData = { projects, tasks, taskGroups: [], entries, templates };
+  const data: AppData = { projects, tasks, taskGroups: [], clients, entries, templates };
   saveData(data);
   return data;
 }

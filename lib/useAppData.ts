@@ -3,7 +3,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppData, TimeEntry } from "./types";
 import {
+  calcAmountExcludingTax,
   calcEffectiveHourlyRate,
+  createClient,
   createEntry,
   createProject,
   createTask,
@@ -14,7 +16,7 @@ import {
 } from "./storage";
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], entries: [], templates: [] });
+  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], clients: [], entries: [], templates: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -47,8 +49,15 @@ export function useAppData() {
   }, []);
 
   const addProject = useCallback(
-    (name: string, contractAmount: number, color: string, templateId?: string) => {
-      const p = createProject(name, contractAmount, color);
+    (
+      name: string,
+      contractAmount: number,
+      color: string,
+      templateId?: string,
+      taxIncluded: boolean = true,
+      clientId: string | null = null
+    ) => {
+      const p = createProject(name, contractAmount, color, taxIncluded, clientId);
       const template = data.templates.find((t) => t.id === templateId);
       const newTasks = template
         ? template.taskNames.map((taskName) => createTask(taskName))
@@ -64,12 +73,58 @@ export function useAppData() {
   );
 
   const updateProject = useCallback(
-    (id: string, name: string, contractAmount: number, color: string) => {
+    (
+      id: string,
+      name: string,
+      contractAmount: number,
+      color: string,
+      taxIncluded: boolean = true,
+      clientId: string | null = null
+    ) => {
       persist({
         ...data,
         projects: data.projects.map((p) =>
-          p.id === id ? { ...p, name, contractAmount, color } : p
+          p.id === id ? { ...p, name, contractAmount, color, taxIncluded, clientId } : p
         ),
+      });
+    },
+    [data, persist]
+  );
+
+  const toggleProjectComplete = useCallback(
+    (id: string) => {
+      persist({
+        ...data,
+        projects: data.projects.map((p) =>
+          p.id === id ? { ...p, completedAt: p.completedAt ? null : new Date().toISOString() } : p
+        ),
+      });
+    },
+    [data, persist]
+  );
+
+  const addClient = useCallback(
+    (name: string) => {
+      const c = createClient(name);
+      persist({ ...data, clients: [...(data.clients ?? []), c] });
+      return c;
+    },
+    [data, persist]
+  );
+
+  const renameClient = useCallback(
+    (id: string, name: string) => {
+      persist({ ...data, clients: (data.clients ?? []).map((c) => c.id === id ? { ...c, name } : c) });
+    },
+    [data, persist]
+  );
+
+  const deleteClient = useCallback(
+    (id: string) => {
+      persist({
+        ...data,
+        clients: (data.clients ?? []).filter((c) => c.id !== id),
+        projects: data.projects.map((p) => p.clientId === id ? { ...p, clientId: null } : p),
       });
     },
     [data, persist]
@@ -338,12 +393,14 @@ export function useAppData() {
           byProject[e.projectId].byTask[e.taskId].seconds += e.durationSeconds;
         }
       }
-      // 時給は案件の全期間合計時間で計算（月跨ぎ対応）
+      // 時給は案件の全期間合計時間・税抜金額で計算（月跨ぎ対応）
       for (const [projectId, row] of Object.entries(byProject)) {
         const totalSeconds = data.entries
           .filter((e) => e.projectId === projectId && e.endTime !== null)
           .reduce((sum, e) => sum + e.durationSeconds, 0);
-        row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, row.contractAmount);
+        const project = data.projects.find((p) => p.id === projectId);
+        const excludingTax = project ? calcAmountExcludingTax(project.contractAmount, project.taxIncluded) : row.contractAmount;
+        row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
       }
       return { byProject, entries: monthEntries };
     },
@@ -354,7 +411,8 @@ export function useAppData() {
     return data.projects.map((p) => {
       const projectEntries = data.entries.filter((e) => e.projectId === p.id && e.endTime !== null);
       const totalSeconds = projectEntries.reduce((sum, e) => sum + e.durationSeconds, 0);
-      const effectiveRate = calcEffectiveHourlyRate(totalSeconds, p.contractAmount);
+      const excludingTax = calcAmountExcludingTax(p.contractAmount, p.taxIncluded);
+      const effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
       const byTask: Record<string, { taskName: string; seconds: number }> = {};
       for (const e of projectEntries) {
         if (!e.taskId) continue;
@@ -363,7 +421,12 @@ export function useAppData() {
         if (!byTask[e.taskId]) byTask[e.taskId] = { taskName: task.name, seconds: 0 };
         byTask[e.taskId].seconds += e.durationSeconds;
       }
-      return { id: p.id, name: p.name, color: p.color, contractAmount: p.contractAmount, totalSeconds, effectiveRate, byTask };
+      return {
+        id: p.id, name: p.name, color: p.color,
+        contractAmount: p.contractAmount, excludingTaxAmount: excludingTax,
+        totalSeconds, effectiveRate, byTask,
+        completedAt: p.completedAt ?? null,
+      };
     }).filter((p) => p.totalSeconds > 0 || p.contractAmount > 0);
   }, [data]);
 
@@ -374,6 +437,10 @@ export function useAppData() {
     isPaused,
     addProject,
     deleteProject,
+    toggleProjectComplete,
+    addClient,
+    renameClient,
+    deleteClient,
     addTask,
     deleteTask,
     addTaskGroup,

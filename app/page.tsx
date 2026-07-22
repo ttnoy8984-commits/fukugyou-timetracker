@@ -20,7 +20,7 @@ const tabs: { key: Tab; label: string }[] = [
 export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
-    addProject, updateProject, deleteProject, addTask, deleteTask, addTaskGroup, deleteTaskGroup, addTasksToGroup, removeTaskFromGroup, renameTask, renameTaskGroup, addTemplate, updateTemplate, deleteTemplate,
+    addProject, updateProject, deleteProject, toggleProjectComplete, addTask, deleteTask, addTaskGroup, deleteTaskGroup, addTasksToGroup, removeTaskFromGroup, renameTask, renameTaskGroup, addClient, renameClient, deleteClient, addTemplate, updateTemplate, deleteTemplate,
     startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
@@ -114,10 +114,12 @@ export default function Home() {
           <ProjectManager
             projects={data.projects}
             tasks={data.tasks}
+            clients={data.clients ?? []}
             templates={data.templates ?? []}
             onAddProject={addProject}
             onUpdateProject={updateProject}
             onDeleteProject={deleteProject}
+            onToggleProjectComplete={toggleProjectComplete}
             onAddTask={addTask}
             onDeleteTask={deleteTask}
             onAddTaskGroup={addTaskGroup}
@@ -126,6 +128,9 @@ export default function Home() {
             onRemoveTaskFromGroup={removeTaskFromGroup}
             onRenameTask={renameTask}
             onRenameTaskGroup={renameTaskGroup}
+            onAddClient={addClient}
+            onRenameClient={renameClient}
+            onDeleteClient={deleteClient}
             taskGroups={data.taskGroups ?? []}
             onAddTemplate={addTemplate}
             onUpdateTemplate={updateTemplate}

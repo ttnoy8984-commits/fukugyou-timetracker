@@ -2,7 +2,16 @@ export interface Project {
   id: string;
   name: string;
   contractAmount: number;
+  taxIncluded: boolean; // true: 税込, false: 税抜
   color: string;
+  clientId?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
   createdAt: string;
 }
 
@@ -42,6 +51,7 @@ export interface AppData {
   projects: Project[];
   tasks: Task[];
   taskGroups: TaskGroup[];
+  clients: Client[];
   entries: TimeEntry[];
   templates: TaskTemplate[];
 }

@@ -1,8 +1,9 @@
-import { AppData, Project, Task, TaskGroup, TaskTemplate, TimeEntry } from "./types";
+import { AppData, Client, Project, Task, TaskGroup, TaskTemplate, TimeEntry } from "./types";
 
 const KEY = "fukugyou_data";
+export const TAX_RATE = 0.1;
 
-const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], entries: [], templates: [] };
+const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [], templates: [] };
 
 export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
@@ -11,10 +12,13 @@ export function loadData(): AppData {
     if (!raw) return defaultData;
     const parsed = JSON.parse(raw);
 
-    // 旧データ（hourlyRate）を新形式（contractAmount）に変換
+    // 旧データ（hourlyRate）を新形式（contractAmount）に変換。taxIncluded等のデフォルト値も補完
     const projects = (parsed.projects ?? []).map((p: Record<string, unknown>) => ({
       ...p,
       contractAmount: p.contractAmount ?? p.hourlyRate ?? 0,
+      taxIncluded: typeof p.taxIncluded === "boolean" ? p.taxIncluded : true,
+      clientId: p.clientId ?? null,
+      completedAt: p.completedAt ?? null,
     }));
 
     // 旧タスク（projectId付き）を共通タスクに昇格。名前重複は1つに統合しつつentryのtaskIdを付け替え
@@ -49,6 +53,7 @@ export function loadData(): AppData {
       projects,
       tasks,
       taskGroups,
+      clients: parsed.clients ?? [],
       entries,
     };
   } catch {
@@ -60,14 +65,37 @@ export function saveData(data: AppData): void {
   localStorage.setItem(KEY, JSON.stringify(data));
 }
 
-export function createProject(name: string, contractAmount: number, color: string): Project {
+export function createProject(
+  name: string,
+  contractAmount: number,
+  color: string,
+  taxIncluded: boolean = true,
+  clientId: string | null = null
+): Project {
   return {
     id: crypto.randomUUID(),
     name,
     contractAmount,
+    taxIncluded,
     color,
+    clientId,
+    completedAt: null,
     createdAt: new Date().toISOString(),
   };
+}
+
+export function createClient(name: string): Client {
+  return { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
+}
+
+// 税抜金額を計算（contractAmountがtaxIncludedなら税抜に変換、そうでなければそのまま）
+export function calcAmountExcludingTax(contractAmount: number, taxIncluded: boolean): number {
+  return taxIncluded ? contractAmount / (1 + TAX_RATE) : contractAmount;
+}
+
+// 税込金額を計算
+export function calcAmountIncludingTax(contractAmount: number, taxIncluded: boolean): number {
+  return taxIncluded ? contractAmount : contractAmount * (1 + TAX_RATE);
 }
 
 export function createTask(name: string): Task {
