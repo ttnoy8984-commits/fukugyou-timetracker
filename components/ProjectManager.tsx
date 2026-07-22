@@ -39,7 +39,7 @@ interface Props {
   onRemoveTaskFromGroup: (groupId: string, taskId: string) => void;
   onRenameTask: (taskId: string, name: string) => void;
   onRenameTaskGroup: (groupId: string, name: string) => void;
-  onAddClient: (name: string) => void;
+  onAddClient: (name: string) => Client;
   onRenameClient: (id: string, name: string) => void;
   onDeleteClient: (id: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
@@ -81,6 +81,8 @@ export default function ProjectManager({
   const [templateId, setTemplateId] = useState("");
   const [taxIncluded, setTaxIncluded] = useState(true);
   const [clientId, setClientId] = useState("");
+  const [addingClientInline, setAddingClientInline] = useState(false);
+  const [inlineClientName, setInlineClientName] = useState("");
 
   // クライアント追加・編集
   const [newClientName, setNewClientName] = useState("");
@@ -115,7 +117,15 @@ export default function ProjectManager({
     setModal(null); setEditingProject(null);
     setName(""); setRate(""); setColor("#6366f1"); setTemplateId("");
     setTaxIncluded(true); setClientId("");
+    setAddingClientInline(false); setInlineClientName("");
     setTplName(""); setTplTaskInput(""); setTplTaskNames([]); setEditingTemplateId(null);
+  }
+
+  function handleAddClientInline() {
+    if (!inlineClientName.trim()) return;
+    const c = onAddClient(inlineClientName.trim());
+    setClientId(c.id);
+    setInlineClientName(""); setAddingClientInline(false);
   }
 
   function openEditProject(p: Project) {
@@ -611,24 +621,38 @@ export default function ProjectManager({
                       className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税抜</button>
                   </div>
                 </div>
-                {clients.length > 0 && (
-                  <select value={clientId} onChange={(e) => setClientId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
-                    <option value="">クライアントを選択（任意）</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                {addingClientInline ? (
+                  <div className="flex gap-2">
+                    <input value={inlineClientName} onChange={(e) => setInlineClientName(e.target.value)}
+                      onKeyDown={onEnterKey(handleAddClientInline)}
+                      placeholder="クライアント名" autoFocus
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                    <button onClick={handleAddClientInline} disabled={!inlineClientName.trim()}
+                      className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
+                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-gray-400 text-sm px-2">✕</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select value={clientId} onChange={(e) => setClientId(e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
+                      <option value="">クライアントなし</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setAddingClientInline(true)}
+                      className="border border-gray-200 hover:bg-gray-50 text-gray-500 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
+                      + 新規
+                    </button>
+                  </div>
                 )}
                 <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
-                {templates.length > 0 && (
-                  <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
-                    <option value="">テンプレートを使用しない</option>
-                    {templates.map((t) => <option key={t.id} value={t.id}>{t.name}（{t.taskNames.join("・")}）</option>)}
-                  </select>
-                )}
+                <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
+                  <option value="">タスクテンプレートなし</option>
+                  {templates.map((t) => <option key={t.id} value={t.id}>{t.name}（{t.taskNames.join("・")}）</option>)}
+                </select>
                 <div className="flex gap-2 pt-1">
                   <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
                   <button onClick={handleAddProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">追加</button>
@@ -651,12 +675,28 @@ export default function ProjectManager({
                       className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税抜</button>
                   </div>
                 </div>
-                {clients.length > 0 && (
-                  <select value={clientId} onChange={(e) => setClientId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
-                    <option value="">クライアントを選択（任意）</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                {addingClientInline ? (
+                  <div className="flex gap-2">
+                    <input value={inlineClientName} onChange={(e) => setInlineClientName(e.target.value)}
+                      onKeyDown={onEnterKey(handleAddClientInline)}
+                      placeholder="クライアント名" autoFocus
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                    <button onClick={handleAddClientInline} disabled={!inlineClientName.trim()}
+                      className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
+                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-gray-400 text-sm px-2">✕</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select value={clientId} onChange={(e) => setClientId(e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
+                      <option value="">クライアントなし</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setAddingClientInline(true)}
+                      className="border border-gray-200 hover:bg-gray-50 text-gray-500 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
+                      + 新規
+                    </button>
+                  </div>
                 )}
                 <div className="space-y-1">
                   <label className="text-sm text-gray-500">カラー</label>
