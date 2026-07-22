@@ -41,6 +41,7 @@ interface Props {
   onUpdateProject: (id: string, name: string, contractAmount: number, color: string) => void;
   onDeleteProject: (id: string) => void;
   onAddTask: (projectId: string, name: string) => void;
+  onDeleteTask: (taskId: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
   onUpdateTemplate: (id: string, name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
@@ -50,9 +51,10 @@ interface Props {
 
 type ModalType = "project" | "task" | "template" | "editProject" | null;
 
+
 export default function ProjectManager({
   projects, tasks, templates,
-  onAddProject, onUpdateProject, onDeleteProject, onAddTask,
+  onAddProject, onUpdateProject, onDeleteProject, onAddTask, onDeleteTask,
   onAddTemplate, onUpdateTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
@@ -75,6 +77,10 @@ export default function ProjectManager({
   const [tplTaskInput, setTplTaskInput] = useState("");
   const [tplTaskNames, setTplTaskNames] = useState<string[]>([]);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+
+  // インラインタスク追加
+  const [addingTaskForProject, setAddingTaskForProject] = useState<string | null>(null);
+  const [inlineTaskName, setInlineTaskName] = useState("");
 
   function closeModal() {
     setModal(null);
@@ -201,49 +207,86 @@ export default function ProjectManager({
 
                 {isExpanded && (
                   <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">タスク</p>
                     {projectTasks.length === 0 ? (
                       <p className="text-xs text-gray-400">タスクなし</p>
                     ) : (
-                      <>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">タスク別作業時間</p>
-                        {projectTasks.map((t) => {
-                          const taskSec = getTaskTotalSeconds(t.id);
-                          return (
-                            <div key={t.id}>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-gray-600">{t.name}</span>
-                                <span className="text-xs font-mono text-gray-500">
+                      projectTasks.map((t) => {
+                        const taskSec = getTaskTotalSeconds(t.id);
+                        return (
+                          <div key={t.id}>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs text-gray-700">{t.name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-mono text-gray-400">
                                   {taskSec > 0 ? formatDuration(taskSec) : "未作業"}
                                 </span>
+                                <button
+                                  onClick={() => onDeleteTask(t.id)}
+                                  className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                                >
+                                  削除
+                                </button>
                               </div>
-                              {taskSec > 0 && totalSeconds > 0 && (
-                                <div className="w-full bg-gray-200 rounded-full h-1">
-                                  <div
-                                    className="h-1 rounded-full"
-                                    style={{
-                                      backgroundColor: p.color,
-                                      opacity: 0.6,
-                                      width: `${(taskSec / totalSeconds) * 100}%`,
-                                    }}
-                                  />
-                                </div>
-                              )}
                             </div>
-                          );
-                        })}
-                      </>
+                            {taskSec > 0 && totalSeconds > 0 && (
+                              <div className="w-full bg-gray-200 rounded-full h-1">
+                                <div
+                                  className="h-1 rounded-full"
+                                  style={{ backgroundColor: p.color, opacity: 0.6, width: `${(taskSec / totalSeconds) * 100}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
-                    <div className="flex gap-4 pt-1">
+
+                    {/* インラインタスク追加 */}
+                    {addingTaskForProject === p.id ? (
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          value={inlineTaskName}
+                          onChange={(e) => setInlineTaskName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && inlineTaskName.trim()) {
+                              onAddTask(p.id, inlineTaskName.trim());
+                              setInlineTaskName("");
+                            }
+                            if (e.key === "Escape") { setAddingTaskForProject(null); setInlineTaskName(""); }
+                          }}
+                          placeholder="タスク名"
+                          autoFocus
+                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-gray-400 bg-white"
+                        />
+                        <button
+                          onClick={() => { if (inlineTaskName.trim()) { onAddTask(p.id, inlineTaskName.trim()); setInlineTaskName(""); } }}
+                          disabled={!inlineTaskName.trim()}
+                          className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors"
+                        >
+                          追加
+                        </button>
+                        <button
+                          onClick={() => { setAddingTaskForProject(null); setInlineTaskName(""); }}
+                          className="text-gray-400 hover:text-gray-600 text-xs px-2"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
                       <button
-                        onClick={() => openEditProject(p)}
-                        className="text-xs text-gray-500 hover:text-gray-800 transition-colors"
+                        onClick={() => { setAddingTaskForProject(p.id); setInlineTaskName(""); }}
+                        className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
                       >
-                        編集
+                        + タスクを追加
                       </button>
-                      <button
-                        onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }}
-                        className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                      >
+                    )}
+
+                    <div className="flex gap-4 pt-1 border-t border-gray-200">
+                      <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors pt-2">
+                        案件を編集
+                      </button>
+                      <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors pt-2">
                         削除
                       </button>
                     </div>

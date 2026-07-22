@@ -20,7 +20,7 @@ const tabs: { key: Tab; label: string }[] = [
 export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
-    addProject, updateProject, deleteProject, addTask, addTemplate, updateTemplate, deleteTemplate,
+    addProject, updateProject, deleteProject, addTask, deleteTask, addTemplate, updateTemplate, deleteTemplate,
     startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
@@ -119,6 +119,7 @@ export default function Home() {
             onUpdateProject={updateProject}
             onDeleteProject={deleteProject}
             onAddTask={addTask}
+            onDeleteTask={deleteTask}
             onAddTemplate={addTemplate}
             onUpdateTemplate={updateTemplate}
             onDeleteTemplate={deleteTemplate}

@@ -95,6 +95,13 @@ export function useAppData() {
     [data, persist]
   );
 
+  const deleteTask = useCallback(
+    (taskId: string) => {
+      persist({ ...data, tasks: data.tasks.filter((t) => t.id !== taskId) });
+    },
+    [data, persist]
+  );
+
   const addTemplate = useCallback(
     (name: string, taskNames: string[]) => {
       const t = createTemplate(name, taskNames);
@@ -308,6 +315,7 @@ export function useAppData() {
     addProject,
     deleteProject,
     addTask,
+    deleteTask,
     addTemplate,
     deleteTemplate,
     startTimer,
