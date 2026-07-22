@@ -9,7 +9,6 @@ export interface Project {
 export interface Task {
   id: string;
   name: string;
-  groupId?: string;
   projectId?: string; // 旧データ互換用
   createdAt: string;
 }
@@ -17,6 +16,7 @@ export interface Task {
 export interface TaskGroup {
   id: string;
   name: string;
+  taskIds: string[];
   createdAt: string;
 }
 

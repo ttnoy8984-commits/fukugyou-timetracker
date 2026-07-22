@@ -65,21 +65,12 @@ export function createProject(name: string, contractAmount: number, color: strin
   };
 }
 
-export function createTask(name: string, groupId?: string): Task {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    groupId,
-    createdAt: new Date().toISOString(),
-  };
+export function createTask(name: string): Task {
+  return { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
 }
 
 export function createTaskGroup(name: string): TaskGroup {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    createdAt: new Date().toISOString(),
-  };
+  return { id: crypto.randomUUID(), name, taskIds: [], createdAt: new Date().toISOString() };
 }
 
 export function createEntry(

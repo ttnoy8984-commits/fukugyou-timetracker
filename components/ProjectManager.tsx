@@ -29,10 +29,12 @@ interface Props {
   onAddProject: (name: string, contractAmount: number, color: string, templateId?: string) => void;
   onUpdateProject: (id: string, name: string, contractAmount: number, color: string) => void;
   onDeleteProject: (id: string) => void;
-  onAddTask: (name: string, groupId?: string) => void;
+  onAddTask: (name: string) => void;
   onDeleteTask: (taskId: string) => void;
   onAddTaskGroup: (name: string) => void;
   onDeleteTaskGroup: (groupId: string) => void;
+  onAddTaskToGroup: (groupId: string, taskId: string) => void;
+  onRemoveTaskFromGroup: (groupId: string, taskId: string) => void;
   onAddTemplate: (name: string, taskNames: string[]) => void;
   onUpdateTemplate: (id: string, name: string, taskNames: string[]) => void;
   onDeleteTemplate: (id: string) => void;
@@ -43,10 +45,18 @@ interface Props {
 type Section = "projects" | "tasks";
 type ModalType = "project" | "editProject" | "template" | null;
 
+// IME変換中のEnterを無視するヘルパー
+function onEnterKey(fn: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) fn();
+  };
+}
+
 export default function ProjectManager({
   projects, tasks, taskGroups, templates,
   onAddProject, onUpdateProject, onDeleteProject,
   onAddTask, onDeleteTask, onAddTaskGroup, onDeleteTaskGroup,
+  onAddTaskToGroup, onRemoveTaskFromGroup,
   onAddTemplate, onUpdateTemplate, onDeleteTemplate,
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
@@ -54,6 +64,7 @@ export default function ProjectManager({
   const [modal, setModal] = useState<ModalType>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   // 案件フォーム
   const [name, setName] = useState("");
@@ -69,9 +80,12 @@ export default function ProjectManager({
 
   // タスク追加
   const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskGroupId, setNewTaskGroupId] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [addingGroup, setAddingGroup] = useState(false);
+
+  // グループへのタスク追加 (groupId → 選択中taskId)
+  const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
+  const [pickTaskId, setPickTaskId] = useState("");
 
   function closeModal() {
     setModal(null); setEditingProject(null);
@@ -96,6 +110,24 @@ export default function ProjectManager({
     closeModal();
   }
 
+  function handleAddTask() {
+    if (!newTaskName.trim()) return;
+    onAddTask(newTaskName.trim());
+    setNewTaskName("");
+  }
+
+  function handleAddGroup() {
+    if (!newGroupName.trim()) return;
+    onAddTaskGroup(newGroupName.trim());
+    setNewGroupName(""); setAddingGroup(false);
+  }
+
+  function handleAddToGroup(groupId: string) {
+    if (!pickTaskId) return;
+    onAddTaskToGroup(groupId, pickTaskId);
+    setPickTaskId(""); setAddingToGroup(null);
+  }
+
   function openEditTemplate(t: TaskTemplate) {
     setEditingTemplateId(t.id); setTplName(t.name); setTplTaskNames([...t.taskNames]); setTplTaskInput("");
   }
@@ -115,27 +147,6 @@ export default function ProjectManager({
     const t = tplTaskInput.trim();
     if (!t || tplTaskNames.includes(t)) return;
     setTplTaskNames([...tplTaskNames, t]); setTplTaskInput("");
-  }
-
-  function handleAddTask() {
-    if (!newTaskName.trim()) return;
-    onAddTask(newTaskName.trim(), newTaskGroupId || undefined);
-    setNewTaskName(""); setNewTaskGroupId("");
-  }
-
-  function handleAddGroup() {
-    if (!newGroupName.trim()) return;
-    onAddTaskGroup(newGroupName.trim());
-    setNewGroupName(""); setAddingGroup(false);
-  }
-
-  // グループごとにタスクをまとめる
-  const grouped: { group: TaskGroup | null; tasks: Task[] }[] = [];
-  const ungrouped = tasks.filter((t) => !t.groupId);
-  if (ungrouped.length > 0) grouped.push({ group: null, tasks: ungrouped });
-  for (const g of taskGroups) {
-    const gt = tasks.filter((t) => t.groupId === g.id);
-    grouped.push({ group: g, tasks: gt });
   }
 
   return (
@@ -198,7 +209,7 @@ export default function ProjectManager({
                       <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
                     </div>
                     {isExpanded && (
-                      <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
+                      <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
                         <div className="flex gap-4">
                           <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
                           <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
@@ -216,80 +227,133 @@ export default function ProjectManager({
       {/* ===== タスクセクション ===== */}
       {section === "tasks" && (
         <>
-          {/* タスク追加 */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">タスクを追加</p>
-            <div className="flex gap-2">
+          {/* タスク一覧 */}
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">タスク一覧</span>
+              <span className="text-xs text-gray-300">{tasks.length}件</span>
+            </div>
+            {tasks.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-gray-400 text-center">タスクがありません</p>
+            ) : (
+              <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+                {tasks.map((t) => {
+                  const sec = getTaskTotalSeconds(t.id);
+                  const inGroups = taskGroups.filter((g) => g.taskIds.includes(t.id));
+                  return (
+                    <div key={t.id} className="flex items-center justify-between px-4 py-2.5">
+                      <div>
+                        <span className="text-sm text-gray-700">{t.name}</span>
+                        {inGroups.length > 0 && (
+                          <div className="flex gap-1 mt-0.5">
+                            {inGroups.map((g) => (
+                              <span key={g.id} className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">{g.name}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
+                        <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {/* タスク追加 */}
+            <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
               <input value={newTaskName} onChange={(e) => setNewTaskName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }}
-                placeholder="タスク名"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400" />
-              <select value={newTaskGroupId} onChange={(e) => setNewTaskGroupId(e.target.value)}
-                className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400">
-                <option value="">グループなし</option>
-                {taskGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+                onKeyDown={onEnterKey(handleAddTask)}
+                placeholder="新しいタスクを追加"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
               <button onClick={handleAddTask} disabled={!newTaskName.trim()}
-                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">
+                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-lg transition-colors">
                 追加
               </button>
             </div>
           </div>
 
-          {/* グループ管理 */}
+          {/* グループ */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">グループ</span>
+            <span className="text-sm font-medium text-gray-700">タスクグループ</span>
             {addingGroup ? (
               <div className="flex gap-2">
                 <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAddGroup(); if (e.key === "Escape") { setAddingGroup(false); setNewGroupName(""); } }}
+                  onKeyDown={onEnterKey(handleAddGroup)}
                   placeholder="グループ名" autoFocus
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-gray-400" />
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-400" />
                 <button onClick={handleAddGroup} disabled={!newGroupName.trim()}
-                  className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-30">追加</button>
-                <button onClick={() => { setAddingGroup(false); setNewGroupName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                  className="bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg disabled:opacity-30">追加</button>
+                <button onClick={() => { setAddingGroup(false); setNewGroupName(""); }} className="text-gray-400 text-sm px-2">✕</button>
               </div>
             ) : (
               <button onClick={() => setAddingGroup(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">+ グループを追加</button>
             )}
           </div>
 
-          {/* タスク一覧 */}
-          {tasks.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">タスクがありません</p>
-              <p className="text-xs text-gray-300 mt-1">上のフォームから追加してください</p>
+          {taskGroups.length === 0 ? (
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
+              <p className="text-sm text-gray-400">グループがありません</p>
+              <p className="text-xs text-gray-300 mt-1">グループを作ってタスクをまとめると、案件登録時に使えます</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {grouped.map(({ group, tasks: gt }) => (
-                <div key={group?.id ?? "__ungrouped"} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-500">{group?.name ?? "グループなし"}</span>
-                    {group && (
-                      <button onClick={() => onDeleteTaskGroup(group.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">グループを削除</button>
+            <div className="space-y-2">
+              {taskGroups.map((g) => {
+                const groupTasks = tasks.filter((t) => g.taskIds.includes(t.id));
+                const isExpanded = expandedGroup === g.id;
+                const availableTasks = tasks.filter((t) => !g.taskIds.includes(t.id));
+                return (
+                  <div key={g.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
+                      onClick={() => setExpandedGroup(isExpanded ? null : g.id)}>
+                      <div>
+                        <span className="text-sm font-medium text-gray-800">{g.name}</span>
+                        <span className="ml-2 text-xs text-gray-400">
+                          {groupTasks.length > 0 ? groupTasks.map((t) => t.name).join("・") : "タスクなし"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                        <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 px-4 py-3 space-y-2 bg-gray-50">
+                        {groupTasks.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {groupTasks.map((t) => (
+                              <span key={t.id} className="flex items-center gap-1 bg-white border border-gray-200 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                                {t.name}
+                                <button onClick={() => onRemoveTaskFromGroup(g.id, t.id)} className="text-gray-300 hover:text-red-400 ml-1">✕</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {addingToGroup === g.id ? (
+                          <div className="flex gap-2">
+                            <select value={pickTaskId} onChange={(e) => setPickTaskId(e.target.value)}
+                              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-400">
+                              <option value="">タスクを選択</option>
+                              {availableTasks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                            <button onClick={() => handleAddToGroup(g.id)} disabled={!pickTaskId}
+                              className="bg-gray-900 text-white text-xs px-3 rounded-lg disabled:opacity-30">追加</button>
+                            <button onClick={() => { setAddingToGroup(null); setPickTaskId(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                          </div>
+                        ) : (
+                          availableTasks.length > 0 && (
+                            <button onClick={() => { setAddingToGroup(g.id); setPickTaskId(""); }}
+                              className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                              + タスクを追加
+                            </button>
+                          )
+                        )}
+                      </div>
                     )}
                   </div>
-                  {gt.length === 0 ? (
-                    <p className="px-4 py-3 text-xs text-gray-300">タスクなし</p>
-                  ) : (
-                    <div className="divide-y divide-gray-50">
-                      {gt.map((t) => {
-                        const sec = getTaskTotalSeconds(t.id);
-                        return (
-                          <div key={t.id} className="flex items-center justify-between px-4 py-3">
-                            <span className="text-sm text-gray-700">{t.name}</span>
-                            <div className="flex items-center gap-3">
-                              {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
-                              <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
@@ -300,7 +364,6 @@ export default function ProjectManager({
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={closeModal}>
           <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
 
-            {/* 案件追加 */}
             {modal === "project" && (
               <>
                 <h3 className="text-base font-semibold text-gray-900">案件を追加</h3>
@@ -326,7 +389,6 @@ export default function ProjectManager({
               </>
             )}
 
-            {/* 案件編集 */}
             {modal === "editProject" && (
               <>
                 <h3 className="text-base font-semibold text-gray-900">案件を編集</h3>
@@ -345,7 +407,6 @@ export default function ProjectManager({
               </>
             )}
 
-            {/* テンプレート */}
             {modal === "template" && (
               <>
                 <h3 className="text-base font-semibold text-gray-900">タスクテンプレート</h3>
@@ -359,7 +420,7 @@ export default function ProjectManager({
                               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
                             <div className="flex gap-2">
                               <input value={tplTaskInput} onChange={(e) => setTplTaskInput(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); } }}
+                                onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddTplTask(); } }}
                                 placeholder="タスクを追加してEnter"
                                 className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
                               <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-xs px-3 rounded-lg transition-colors">追加</button>
@@ -404,7 +465,7 @@ export default function ProjectManager({
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
                     <div className="flex gap-2">
                       <input value={tplTaskInput} onChange={(e) => setTplTaskInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTplTask(); } }}
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddTplTask(); } }}
                         placeholder="タスク名を入力してEnter"
                         className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
                       <button onClick={handleAddTplTask} disabled={!tplTaskInput.trim()} className="bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-gray-700 text-sm px-4 rounded-xl transition-colors">追加</button>

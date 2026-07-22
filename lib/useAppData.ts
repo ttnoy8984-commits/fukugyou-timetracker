@@ -51,7 +51,7 @@ export function useAppData() {
       const p = createProject(name, contractAmount, color);
       const template = data.templates.find((t) => t.id === templateId);
       const newTasks = template
-        ? template.taskNames.map((taskName) => createTask(p.id, taskName))
+        ? template.taskNames.map((taskName) => createTask(taskName))
         : [];
       persist({
         ...data,
@@ -87,8 +87,8 @@ export function useAppData() {
   );
 
   const addTask = useCallback(
-    (name: string, groupId?: string) => {
-      const t = createTask(name, groupId);
+    (name: string) => {
+      const t = createTask(name);
       persist({ ...data, tasks: [...data.tasks, t] });
       return t;
     },
@@ -97,7 +97,11 @@ export function useAppData() {
 
   const deleteTask = useCallback(
     (taskId: string) => {
-      persist({ ...data, tasks: data.tasks.filter((t) => t.id !== taskId) });
+      persist({
+        ...data,
+        tasks: data.tasks.filter((t) => t.id !== taskId),
+        taskGroups: (data.taskGroups ?? []).map((g) => ({ ...g, taskIds: g.taskIds.filter((id) => id !== taskId) })),
+      });
     },
     [data, persist]
   );
@@ -113,10 +117,32 @@ export function useAppData() {
 
   const deleteTaskGroup = useCallback(
     (groupId: string) => {
+      persist({ ...data, taskGroups: (data.taskGroups ?? []).filter((g) => g.id !== groupId) });
+    },
+    [data, persist]
+  );
+
+  const addTaskToGroup = useCallback(
+    (groupId: string, taskId: string) => {
       persist({
         ...data,
-        taskGroups: (data.taskGroups ?? []).filter((g) => g.id !== groupId),
-        tasks: data.tasks.map((t) => t.groupId === groupId ? { ...t, groupId: undefined } : t),
+        taskGroups: (data.taskGroups ?? []).map((g) =>
+          g.id === groupId && !g.taskIds.includes(taskId)
+            ? { ...g, taskIds: [...g.taskIds, taskId] }
+            : g
+        ),
+      });
+    },
+    [data, persist]
+  );
+
+  const removeTaskFromGroup = useCallback(
+    (groupId: string, taskId: string) => {
+      persist({
+        ...data,
+        taskGroups: (data.taskGroups ?? []).map((g) =>
+          g.id === groupId ? { ...g, taskIds: g.taskIds.filter((id) => id !== taskId) } : g
+        ),
       });
     },
     [data, persist]
@@ -338,6 +364,8 @@ export function useAppData() {
     deleteTask,
     addTaskGroup,
     deleteTaskGroup,
+    addTaskToGroup,
+    removeTaskFromGroup,
     addTemplate,
     deleteTemplate,
     startTimer,
