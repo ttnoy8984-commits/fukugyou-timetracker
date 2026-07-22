@@ -9,7 +9,7 @@ interface Props {
   projects: Project[];
   tasks: Task[];
   onDelete: (id: string) => void;
-  onUpdate: (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
+  onUpdate: (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
 type SortKey = "date" | "duration";
@@ -76,12 +76,12 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   }
 
   function handleSave() {
-    if (!editingEntry || !editProjectId || !editTaskId) { setError("案件とタスクを選択してください"); return; }
+    if (!editingEntry) return;
     const s = new Date(`${date}T${startTime}`);
     const en = new Date(`${date}T${endTime}`);
     if (isNaN(s.getTime()) || isNaN(en.getTime())) { setError("時刻が正しくありません"); return; }
     if (en <= s) { setError("終了は開始より後にしてください"); return; }
-    onUpdate(editingEntry.id, editProjectId, editTaskId, date, startTime, endTime, note);
+    onUpdate(editingEntry.id, editProjectId || null, editTaskId || null, date, startTime, endTime, note);
     setEditingEntry(null);
   }
 
@@ -93,7 +93,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     return formatDuration(Math.floor((e.getTime() - s.getTime()) / 1000));
   })();
 
-  const editFilteredTasks = tasks.filter((t) => t.projectId === editProjectId);
+  const editFilteredTasks = editProjectId ? tasks.filter((t) => t.projectId === editProjectId) : tasks;
 
   return (
     <>

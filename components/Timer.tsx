@@ -15,7 +15,7 @@ interface Props {
   onResume: () => void;
   onStop: () => string | null;
   onUpdate: (id: string, projectId: string, taskId: string, note: string) => void;
-  onManualAdd: (projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => void;
+  onManualAdd: (projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => void;
 }
 
 export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onUpdate, onManualAdd }: Props) {
@@ -69,8 +69,8 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
 
   function handleManualAdd() {
     setMError("");
-    if (!mProjectId || !mTaskId || !mDate || !mStart || !mEnd) {
-      setMError("すべての項目を入力してください");
+    if (!mDate || !mStart || !mEnd) {
+      setMError("日付と時刻を入力してください");
       return;
     }
     const start = new Date(`${mDate}T${mStart}`);
@@ -83,7 +83,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
       setMError("終了時刻は開始時刻より後にしてください");
       return;
     }
-    onManualAdd(mProjectId, mTaskId, mDate, mStart, mEnd, mNote);
+    onManualAdd(mProjectId || null, mTaskId || null, mDate, mStart, mEnd, mNote);
     setMStart(""); setMEnd(""); setMNote("");
   }
 
@@ -267,7 +267,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
 
           <button
             onClick={handleManualAdd}
-            disabled={!mProjectId || !mTaskId || !mDate || !mStart || !mEnd}
+            disabled={!mDate || !mStart || !mEnd}
             className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
           >
             記録する

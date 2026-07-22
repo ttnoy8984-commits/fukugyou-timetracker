@@ -183,7 +183,7 @@ export function useAppData() {
   );
 
   const updateEntry = useCallback(
-    (id: string, projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
+    (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => {
       const startISO = new Date(`${date}T${startTime}`).toISOString();
       const endISO = new Date(`${date}T${endTime}`).toISOString();
       const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
@@ -198,7 +198,7 @@ export function useAppData() {
   );
 
   const addManualEntry = useCallback(
-    (projectId: string, taskId: string, date: string, startTime: string, endTime: string, note: string) => {
+    (projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => {
       const startISO = new Date(`${date}T${startTime}`).toISOString();
       const endISO = new Date(`${date}T${endTime}`).toISOString();
       const durationSeconds = Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / 1000);
