@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Client, Project, Task, TaskGroup } from "@/lib/types";
 import { calcAmountExcludingTax, calcAmountIncludingTax, calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
@@ -46,6 +46,8 @@ interface Props {
 }
 
 type Section = "projects" | "tasks" | "clients";
+type ProjectSortKey = "name" | "client" | "amount" | "rate" | "duration";
+type SortDir = "asc" | "desc";
 type ModalType = "project" | "editProject" | null;
 
 // IME変換中のEnterを無視するヘルパー
@@ -64,6 +66,8 @@ export default function ProjectManager({
   getProjectTotalSeconds, getTaskTotalSeconds,
 }: Props) {
   const [section, setSection] = useState<Section>("projects");
+  const [projectSortKey, setProjectSortKey] = useState<ProjectSortKey>("name");
+  const [projectSortDir, setProjectSortDir] = useState<SortDir>("asc");
   const [modal, setModal] = useState<ModalType>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -251,80 +255,149 @@ export default function ProjectManager({
           ) : (
             <>
               {(() => {
-                const activeProjects = projects.filter((p) => !p.completedAt);
-                const completedProjects = projects.filter((p) => p.completedAt);
-                const renderProject = (p: Project, i: number, arr: Project[]) => {
-                  const totalSeconds = getProjectTotalSeconds(p.id);
-                  const excludingTax = calcAmountExcludingTax(p.contractAmount, p.taxIncluded);
-                  const effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
-                  const isExpanded = expandedProject === p.id;
-                  const client = clients.find((c) => c.id === p.clientId);
-                  const isCompleted = !!p.completedAt;
-                  return (
-                    <div key={p.id} className={i > 0 ? "border-t border-gray-100" : ""}>
-                      <div className={`flex items-center gap-3 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isCompleted ? "opacity-50" : ""}`}
-                        onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onToggleProjectComplete(p.id); }}
-                          className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                            isCompleted ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-gray-400"
-                          }`}
-                          title={isCompleted ? "完了を解除" : "完了にする"}
-                        >
-                          {isCompleted && <span className="text-white text-xs">✓</span>}
-                        </button>
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                        <div className="flex-1 min-w-0">
-                          <div className={`text-sm font-medium text-gray-800 ${isCompleted ? "line-through" : ""}`}>{p.name}</div>
-                          <div className="text-xs text-gray-400">
-                            {client && <span className="mr-2">{client.name}</span>}
-                            契約 ¥{p.contractAmount.toLocaleString()}（{p.taxIncluded ? "税込" : "税抜"}）
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {totalSeconds > 0 ? (
-                            <>
-                              <div className="text-sm text-gray-700">¥{Math.round(effectiveRate).toLocaleString()}/h</div>
-                              <div className="text-xs text-gray-400">{formatDuration(totalSeconds)}</div>
-                            </>
-                          ) : (
-                            <div className="text-xs text-gray-400">未作業</div>
-                          )}
-                        </div>
-                        <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
-                      </div>
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 space-y-2">
-                          <div className="text-xs text-gray-500 space-y-0.5">
-                            <div>税込金額：¥{Math.round(calcAmountIncludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
-                            <div>税抜金額：¥{Math.round(excludingTax).toLocaleString()}</div>
-                          </div>
-                          <div className="flex gap-4 pt-1">
-                            <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
-                            <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                };
+                function handleProjectSort(key: ProjectSortKey) {
+                  if (projectSortKey === key) setProjectSortDir(projectSortDir === "desc" ? "asc" : "desc");
+                  else { setProjectSortKey(key); setProjectSortDir("asc"); }
+                }
+                function sortIcon(key: ProjectSortKey) {
+                  if (projectSortKey !== key) return <span className="text-gray-300 ml-0.5">↕</span>;
+                  return <span className="text-gray-700 ml-0.5">{projectSortDir === "desc" ? "↓" : "↑"}</span>;
+                }
+                function rowsFor(list: Project[]) {
+                  const rows = list.map((p) => {
+                    const totalSeconds = getProjectTotalSeconds(p.id);
+                    const excludingTax = calcAmountExcludingTax(p.contractAmount, p.taxIncluded);
+                    const effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
+                    const client = clients.find((c) => c.id === p.clientId);
+                    return { p, totalSeconds, effectiveRate, client };
+                  });
+                  rows.sort((a, b) => {
+                    let diff = 0;
+                    switch (projectSortKey) {
+                      case "name": diff = a.p.name.localeCompare(b.p.name); break;
+                      case "client": diff = (a.client?.name ?? "").localeCompare(b.client?.name ?? ""); break;
+                      case "amount": diff = a.p.contractAmount - b.p.contractAmount; break;
+                      case "rate": diff = a.effectiveRate - b.effectiveRate; break;
+                      case "duration": diff = a.totalSeconds - b.totalSeconds; break;
+                    }
+                    return projectSortDir === "desc" ? -diff : diff;
+                  });
+                  return rows;
+                }
+
+                const activeRows = rowsFor(projects.filter((p) => !p.completedAt));
+                const completedRows = rowsFor(projects.filter((p) => p.completedAt));
+
+                const headerRow = (
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="px-4 py-3 w-8" />
+                    <th className="text-left px-2 py-3 whitespace-nowrap">
+                      <button onClick={() => handleProjectSort("name")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                        案件名{sortIcon("name")}
+                      </button>
+                    </th>
+                    <th className="text-left px-2 py-3 whitespace-nowrap">
+                      <button onClick={() => handleProjectSort("client")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                        クライアント{sortIcon("client")}
+                      </button>
+                    </th>
+                    <th className="text-right px-2 py-3 whitespace-nowrap">
+                      <button onClick={() => handleProjectSort("amount")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                        契約金額{sortIcon("amount")}
+                      </button>
+                    </th>
+                    <th className="text-right px-2 py-3 whitespace-nowrap">
+                      <button onClick={() => handleProjectSort("rate")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                        時給{sortIcon("rate")}
+                      </button>
+                    </th>
+                    <th className="text-right px-4 py-3 whitespace-nowrap">
+                      <button onClick={() => handleProjectSort("duration")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                        作業時間{sortIcon("duration")}
+                      </button>
+                    </th>
+                  </tr>
+                );
+
+                function renderRows(rows: ReturnType<typeof rowsFor>) {
+                  return rows.map(({ p, totalSeconds, effectiveRate, client }) => {
+                    const isExpanded = expandedProject === p.id;
+                    const isCompleted = !!p.completedAt;
+                    return (
+                      <Fragment key={p.id}>
+                        <tr className={`border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${isCompleted ? "opacity-50" : ""}`}
+                          onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onToggleProjectComplete(p.id); }}
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                isCompleted ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-gray-400"
+                              }`}
+                              title={isCompleted ? "完了を解除" : "完了にする"}
+                            >
+                              {isCompleted && <span className="text-white text-xs">✓</span>}
+                            </button>
+                          </td>
+                          <td className="px-2 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                              <span className={`text-sm text-gray-800 whitespace-nowrap ${isCompleted ? "line-through" : ""}`}>{p.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-nowrap">{client?.name ?? "—"}</td>
+                          <td className="px-2 py-3 text-right text-xs text-gray-600 whitespace-nowrap">
+                            ¥{p.contractAmount.toLocaleString()}
+                            <span className="text-gray-300 ml-1">{p.taxIncluded ? "込" : "抜"}</span>
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs whitespace-nowrap">
+                            {totalSeconds > 0 ? <span className="text-gray-700">¥{Math.round(effectiveRate).toLocaleString()}</span> : <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs font-mono text-gray-500 whitespace-nowrap">
+                            {totalSeconds > 0 ? formatDuration(totalSeconds) : "—"}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={6} className="border-b border-gray-100 bg-gray-50 px-6 py-4">
+                              <div className="text-xs text-gray-500 space-y-0.5">
+                                <div>税込金額：¥{Math.round(calcAmountIncludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
+                                <div>税抜金額：¥{Math.round(calcAmountExcludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
+                              </div>
+                              <div className="flex gap-4 pt-2">
+                                <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
+                                <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  });
+                }
+
                 return (
                   <>
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                      {activeProjects.length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+                      {activeRows.length === 0 ? (
                         <p className="px-6 py-8 text-sm text-gray-400 text-center">進行中の案件がありません</p>
                       ) : (
-                        activeProjects.map((p, i, arr) => renderProject(p, i, arr))
+                        <table className="w-full text-sm">
+                          <thead>{headerRow}</thead>
+                          <tbody>{renderRows(activeRows)}</tbody>
+                        </table>
                       )}
                     </div>
-                    {completedProjects.length > 0 && (
+                    {completedRows.length > 0 && (
                       <div>
                         <button onClick={() => setShowCompleted(!showCompleted)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors mb-2">
-                          完了した案件（{completedProjects.length}件）{showCompleted ? "を隠す" : "を表示"}
+                          完了した案件（{completedRows.length}件）{showCompleted ? "を隠す" : "を表示"}
                         </button>
                         {showCompleted && (
-                          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                            {completedProjects.map((p, i, arr) => renderProject(p, i, arr))}
+                          <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>{headerRow}</thead>
+                              <tbody>{renderRows(completedRows)}</tbody>
+                            </table>
                           </div>
                         )}
                       </div>
