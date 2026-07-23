@@ -43,6 +43,7 @@ interface Props {
   onDeleteClient: (id: string) => void;
   getProjectTotalSeconds: (projectId: string) => number;
   getTaskTotalSeconds: (taskId: string) => number;
+  getProjectTaskBreakdown: (projectId: string) => { taskName: string; seconds: number }[];
 }
 
 type Section = "projects" | "tasks" | "clients";
@@ -63,7 +64,7 @@ export default function ProjectManager({
   onAddTask, onDeleteTask, onAddTaskGroup, onDeleteTaskGroup,
   onAddTasksToGroup, onRemoveTaskFromGroup, onRenameTask, onRenameTaskGroup,
   onAddClient, onRenameClient, onDeleteClient,
-  getProjectTotalSeconds, getTaskTotalSeconds,
+  getProjectTotalSeconds, getTaskTotalSeconds, getProjectTaskBreakdown,
 }: Props) {
   const [section, setSection] = useState<Section>("projects");
   const [projectSortKey, setProjectSortKey] = useState<ProjectSortKey>("name");
@@ -356,20 +357,42 @@ export default function ProjectManager({
                             {totalSeconds > 0 ? formatDuration(totalSeconds) : "—"}
                           </td>
                         </tr>
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={6} className="border-b border-gray-100 bg-gray-50 px-6 py-4">
-                              <div className="text-xs text-gray-500 space-y-0.5">
-                                <div>税込金額：¥{Math.round(calcAmountIncludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
-                                <div>税抜金額：¥{Math.round(calcAmountExcludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
-                              </div>
-                              <div className="flex gap-4 pt-2">
-                                <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
-                                <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
+                        {isExpanded && (() => {
+                          const taskRows = getProjectTaskBreakdown(p.id);
+                          return (
+                            <tr>
+                              <td colSpan={6} className="border-b border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
+                                <div className="text-xs text-gray-500 space-y-0.5">
+                                  <div>税込金額：¥{Math.round(calcAmountIncludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
+                                  <div>税抜金額：¥{Math.round(calcAmountExcludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
+                                </div>
+                                {taskRows.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs text-gray-400 uppercase tracking-wider">タスク別作業時間</p>
+                                    {taskRows.map((t) => (
+                                      <div key={t.taskName}>
+                                        <div className="flex justify-between items-center mb-1">
+                                          <span className="text-xs text-gray-600">{t.taskName}</span>
+                                          <span className="text-xs font-mono text-gray-500">{formatDuration(t.seconds)}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-1">
+                                          <div className="h-1 rounded-full" style={{
+                                            backgroundColor: p.color, opacity: 0.6,
+                                            width: totalSeconds > 0 ? `${(t.seconds / totalSeconds) * 100}%` : "0%",
+                                          }} />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="flex gap-4 pt-1">
+                                  <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
+                                  <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
                       </Fragment>
                     );
                   });

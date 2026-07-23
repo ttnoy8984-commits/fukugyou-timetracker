@@ -338,6 +338,21 @@ export function useAppData() {
     [data]
   );
 
+  const getProjectTaskBreakdown = useCallback(
+    (projectId: string) => {
+      const byTask: Record<string, { taskName: string; seconds: number }> = {};
+      for (const e of data.entries) {
+        if (e.projectId !== projectId || e.endTime === null || !e.taskId) continue;
+        const task = data.tasks.find((t) => t.id === e.taskId);
+        if (!task) continue;
+        if (!byTask[e.taskId]) byTask[e.taskId] = { taskName: task.name, seconds: 0 };
+        byTask[e.taskId].seconds += e.durationSeconds;
+      }
+      return Object.values(byTask).sort((a, b) => b.seconds - a.seconds);
+    },
+    [data]
+  );
+
   const getMonthlySummary = useCallback(
     (year: number, month: number) => {
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
@@ -433,6 +448,7 @@ export function useAppData() {
     deleteEntry,
     getProjectTotalSeconds,
     getTaskTotalSeconds,
+    getProjectTaskBreakdown,
     assignEntry,
     getMonthlySummary,
     getProjectSummaries,

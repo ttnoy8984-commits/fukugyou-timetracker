@@ -21,7 +21,7 @@ export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
     addProject, updateProject, deleteProject, toggleProjectComplete, addTask, deleteTask, addTaskGroup, deleteTaskGroup, addTasksToGroup, removeTaskFromGroup, renameTask, renameTaskGroup, addClient, renameClient, deleteClient,
-    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getMonthlySummary, getProjectSummaries,
+    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getProjectTaskBreakdown, getMonthlySummary, getProjectSummaries,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -133,6 +133,7 @@ export default function Home() {
             taskGroups={data.taskGroups ?? []}
             getProjectTotalSeconds={getProjectTotalSeconds}
             getTaskTotalSeconds={getTaskTotalSeconds}
+            getProjectTaskBreakdown={getProjectTaskBreakdown}
           />
         )}
         {tab === "log" && (
