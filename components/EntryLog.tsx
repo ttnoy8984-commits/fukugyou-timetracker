@@ -12,7 +12,7 @@ interface Props {
   onUpdate: (id: string, projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string, pausedSeconds?: number) => void;
 }
 
-type SortKey = "date" | "duration";
+type SortKey = "date" | "duration" | "project" | "task";
 type SortDir = "asc" | "desc";
 
 export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate }: Props) {
@@ -56,9 +56,25 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   const completed = filtered
     .sort((a, b) => {
-      const diff = sortKey === "date"
-        ? a.startTime.localeCompare(b.startTime)
-        : a.durationSeconds - b.durationSeconds;
+      let diff = 0;
+      if (sortKey === "date") {
+        diff = a.startTime.localeCompare(b.startTime);
+      } else if (sortKey === "duration") {
+        diff = a.durationSeconds - b.durationSeconds;
+      } else if (sortKey === "project") {
+        // 未設定は常に先頭にまとめる
+        const an = projects.find((p) => p.id === a.projectId)?.name ?? "";
+        const bn = projects.find((p) => p.id === b.projectId)?.name ?? "";
+        if (!an && bn) diff = -1;
+        else if (an && !bn) diff = 1;
+        else diff = an.localeCompare(bn);
+      } else if (sortKey === "task") {
+        const an = tasks.find((t) => t.id === a.taskId)?.name ?? "";
+        const bn = tasks.find((t) => t.id === b.taskId)?.name ?? "";
+        if (!an && bn) diff = -1;
+        else if (an && !bn) diff = 1;
+        else diff = an.localeCompare(bn);
+      }
       return sortDir === "desc" ? -diff : diff;
     })
     .slice(0, 100);
@@ -181,8 +197,16 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                       日付{sortIcon("date")}
                     </button>
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">案件</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">タスク</th>
+                  <th className="text-left px-4 py-3 whitespace-nowrap">
+                    <button onClick={() => handleSort("project")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      案件{sortIcon("project")}
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-3 whitespace-nowrap">
+                    <button onClick={() => handleSort("task")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      タスク{sortIcon("task")}
+                    </button>
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">メモ</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">休憩</th>
                   <th className="text-right px-4 py-3 whitespace-nowrap">
