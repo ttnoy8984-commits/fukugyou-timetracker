@@ -298,11 +298,10 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             <select
               value={assignTaskId}
               onChange={(e) => setAssignTaskId(e.target.value)}
-              disabled={!assignProjectId}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-40"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
             >
               <option value="">タスクを選択</option>
-              {tasks.filter((t) => t.projectId === assignProjectId).map((t) => (
+              {(assignProjectId ? tasksForProject(assignProjectId) : tasks).map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
