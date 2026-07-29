@@ -363,7 +363,7 @@ export function useAppData() {
         (e) => e.date.startsWith(prefix) && e.endTime !== null
       );
       const byProject: Record<string, {
-        seconds: number; contractAmount: number; effectiveRate: number;
+        seconds: number; contractAmount: number; taxIncluded: boolean; effectiveRate: number;
         name: string; color: string;
         byTask: Record<string, { taskName: string; seconds: number }>;
       }> = {};
@@ -373,7 +373,7 @@ export function useAppData() {
         if (!project || !e.projectId) continue;
         if (!byProject[e.projectId]) {
           byProject[e.projectId] = {
-            seconds: 0, contractAmount: project.contractAmount, effectiveRate: 0,
+            seconds: 0, contractAmount: project.contractAmount, taxIncluded: project.taxIncluded, effectiveRate: 0,
             name: project.name, color: project.color, byTask: {},
           };
         }

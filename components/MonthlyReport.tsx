@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { formatDuration } from "@/lib/storage";
+import { calcAmountIncludingTax, formatDuration } from "@/lib/storage";
 
 interface TaskSummary { taskName: string; seconds: number; }
 
 interface ProjectSummary {
-  seconds: number; contractAmount: number; effectiveRate: number;
+  seconds: number; contractAmount: number; taxIncluded: boolean; effectiveRate: number;
   name: string; color: string;
   byTask: Record<string, TaskSummary>;
 }
 
 interface ProjectTotal {
   id: string; name: string; color: string;
-  contractAmount: number; totalSeconds: number; effectiveRate: number;
+  contractAmount: number; includingTaxAmount: number; totalSeconds: number; effectiveRate: number;
   byTask: Record<string, TaskSummary>;
 }
 
@@ -123,6 +123,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                               <span className="text-sm font-medium text-gray-800">{r.name}</span>
                             </div>
                             <div className="flex items-center gap-3">
+                              <span className="text-xs text-gray-400">¥{Math.round(calcAmountIncludingTax(r.contractAmount, r.taxIncluded)).toLocaleString()}</span>
                               <span className="text-sm font-mono text-gray-500">{formatDuration(r.seconds)}</span>
                               <span className="text-sm text-gray-700">¥{Math.round(r.effectiveRate).toLocaleString()}/h</span>
                               <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
@@ -192,7 +193,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                               <p className={`text-base font-mono font-medium ${rateColor(p.effectiveRate, maxRate)}`}>
                                 ¥{Math.round(p.effectiveRate).toLocaleString()}<span className="text-xs font-normal">/h</span>
                               </p>
-                              <p className="text-xs text-gray-400">{formatDuration(p.totalSeconds)} · ¥{p.contractAmount.toLocaleString()}</p>
+                              <p className="text-xs text-gray-400">{formatDuration(p.totalSeconds)} · ¥{Math.round(p.includingTaxAmount).toLocaleString()}</p>
                             </div>
                             <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
                           </div>
