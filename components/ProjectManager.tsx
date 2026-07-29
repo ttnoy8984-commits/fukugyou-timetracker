@@ -29,7 +29,7 @@ interface Props {
   onAddProject: (name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null, taskIds?: string[]) => void;
   onUpdateProject: (id: string, name: string, contractAmount: number, color: string, taxIncluded?: boolean, clientId?: string | null, taskIds?: string[]) => void;
   onDeleteProject: (id: string) => void;
-  onToggleProjectComplete: (id: string) => void;
+  onToggleProjectComplete: (id: string, date?: string) => void;
   onAddTask: (name: string) => Task;
   onDeleteTask: (taskId: string) => void;
   onAddTaskGroup: (name: string) => void;
@@ -95,6 +95,8 @@ export default function ProjectManager({
 
   // 完了案件を表示するか
   const [showCompleted, setShowCompleted] = useState(false);
+  const [completingProjectId, setCompletingProjectId] = useState<string | null>(null);
+  const [completeDate, setCompleteDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   // タスク追加
   const [newTaskName, setNewTaskName] = useState("");
@@ -328,9 +330,14 @@ export default function ProjectManager({
                       <Fragment key={p.id}>
                         <tr className={`border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${isCompleted ? "opacity-50" : ""}`}
                           onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 relative">
                             <button
-                              onClick={(e) => { e.stopPropagation(); onToggleProjectComplete(p.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isCompleted) { onToggleProjectComplete(p.id); return; }
+                                setCompleteDate(new Date().toISOString().slice(0, 10));
+                                setCompletingProjectId(completingProjectId === p.id ? null : p.id);
+                              }}
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                                 isCompleted ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-gray-400"
                               }`}
@@ -338,6 +345,20 @@ export default function ProjectManager({
                             >
                               {isCompleted && <span className="text-white text-xs">✓</span>}
                             </button>
+                            {completingProjectId === p.id && (
+                              <div onClick={(e) => e.stopPropagation()}
+                                className="absolute left-0 top-8 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-56 space-y-2">
+                                <label className="text-xs text-gray-400 block">完了日</label>
+                                <input type="date" value={completeDate} onChange={(e) => setCompleteDate(e.target.value)}
+                                  className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-gray-400" />
+                                <div className="flex gap-2">
+                                  <button onClick={() => setCompletingProjectId(null)}
+                                    className="flex-1 border border-gray-200 text-gray-500 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                                  <button onClick={() => { onToggleProjectComplete(p.id, completeDate); setCompletingProjectId(null); }}
+                                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-xs py-1.5 rounded-lg transition-colors">完了にする</button>
+                                </div>
+                              </div>
+                            )}
                           </td>
                           <td className="px-2 py-3">
                             <div className="flex items-center gap-2">

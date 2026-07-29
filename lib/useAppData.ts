@@ -84,11 +84,13 @@ export function useAppData() {
   );
 
   const toggleProjectComplete = useCallback(
-    (id: string) => {
+    (id: string, date?: string) => {
       persist({
         ...data,
         projects: data.projects.map((p) =>
-          p.id === id ? { ...p, completedAt: p.completedAt ? null : new Date().toISOString() } : p
+          p.id === id
+            ? { ...p, completedAt: p.completedAt ? null : new Date(date ? `${date}T12:00:00` : Date.now()).toISOString() }
+            : p
         ),
       });
     },
