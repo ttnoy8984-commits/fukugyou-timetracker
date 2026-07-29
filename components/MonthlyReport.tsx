@@ -28,7 +28,7 @@ interface Props {
   getProjectSummaries: () => ProjectTotal[];
 }
 
-type ReportTab = "monthly" | "projects";
+type ReportTab = "monthly" | "yearly" | "projects";
 
 export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }: Props) {
   const now = new Date();
@@ -47,6 +47,24 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const projectSummaries = getProjectSummaries().sort((a, b) => b.effectiveRate - a.effectiveRate);
   const maxRate = projectSummaries[0]?.effectiveRate ?? 0;
 
+  // 年次集計：各月のgetMonthlySummaryを積み上げる
+  const monthlyBreakdown = months.map((m) => {
+    const s = getMonthlySummary(year, m);
+    const seconds = Object.values(s.byProject).reduce((sum, r) => sum + r.seconds, 0);
+    return {
+      month: m,
+      seconds,
+      completedContractTotal: s.completedContractTotal,
+      completedContractTotalExcludingTax: s.completedContractTotalExcludingTax,
+      completedCount: s.completedCount,
+    };
+  });
+  const yearTotalSeconds = monthlyBreakdown.reduce((s, m) => s + m.seconds, 0);
+  const yearTotalContract = monthlyBreakdown.reduce((s, m) => s + m.completedContractTotal, 0);
+  const yearTotalContractExcludingTax = monthlyBreakdown.reduce((s, m) => s + m.completedContractTotalExcludingTax, 0);
+  const yearCompletedCount = monthlyBreakdown.reduce((s, m) => s + m.completedCount, 0);
+  const maxMonthSeconds = Math.max(...monthlyBreakdown.map((m) => m.seconds), 1);
+
   function rateColor(rate: number, max: number) {
     if (max === 0) return "text-gray-400";
     const ratio = rate / max;
@@ -64,6 +82,12 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
           className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === "monthly" ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
         >
           月次
+        </button>
+        <button
+          onClick={() => setReportTab("yearly")}
+          className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === "yearly" ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
+        >
+          年次
         </button>
         <button
           onClick={() => setReportTab("projects")}
@@ -160,6 +184,60 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {reportTab === "yearly" && (
+        <>
+          {/* 年選択 */}
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))}
+            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400">
+            {years.map((y) => <option key={y} value={y}>{y}年</option>)}
+          </select>
+
+          {yearTotalSeconds === 0 && yearCompletedCount === 0 ? (
+            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
+              <p className="text-sm text-gray-400">この年の記録はありません</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">年間合計作業時間</p>
+                  <p className="text-3xl font-mono font-light text-gray-900">{formatDuration(yearTotalSeconds)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">確定金額（完了{yearCompletedCount}件・税込）</p>
+                  <p className="text-3xl font-light text-gray-900">¥{Math.round(yearTotalContract).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">税抜 ¥{Math.round(yearTotalContractExcludingTax).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">月別推移</h2>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {monthlyBreakdown.map((m) => (
+                    <div key={m.month} className="px-6 py-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700 font-medium">{m.month}月</span>
+                        <div className="flex items-center gap-3">
+                          {m.completedCount > 0 && (
+                            <span className="text-xs text-gray-400">確定 ¥{Math.round(m.completedContractTotal).toLocaleString()}（{m.completedCount}件）</span>
+                          )}
+                          <span className="text-sm font-mono text-gray-500">{m.seconds > 0 ? formatDuration(m.seconds) : "—"}</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="h-1.5 rounded-full bg-indigo-400" style={{ width: `${(m.seconds / maxMonthSeconds) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </>
