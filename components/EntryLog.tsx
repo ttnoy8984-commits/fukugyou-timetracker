@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Project, Task, TimeEntry } from "@/lib/types";
-import { formatDuration } from "@/lib/storage";
+import { calcAmountIncludingTax, formatDuration } from "@/lib/storage";
 
 interface Props {
   entries: TimeEntry[];
@@ -227,7 +227,12 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color ?? "#ccc" }} />
-                          <span className="text-gray-800 font-medium text-xs">{project?.name ?? "—"}</span>
+                          <div>
+                            <div className="text-gray-800 font-medium text-xs">{project?.name ?? "—"}</div>
+                            {project && (
+                              <div className="text-gray-400 text-xs">¥{Math.round(calcAmountIncludingTax(project.contractAmount, project.taxIncluded)).toLocaleString()}</div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{task?.name ?? "—"}</td>
