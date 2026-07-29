@@ -99,9 +99,9 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                   <p className="text-3xl font-mono font-light text-gray-900">{formatDuration(totalSeconds)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">確定金額（完了{completedCount}件・税抜）</p>
-                  <p className="text-3xl font-light text-gray-900">¥{Math.round(completedContractTotalExcludingTax).toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">税込 ¥{Math.round(completedContractTotal).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">確定金額（完了{completedCount}件・税込）</p>
+                  <p className="text-3xl font-light text-gray-900">¥{Math.round(completedContractTotal).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">税抜 ¥{Math.round(completedContractTotalExcludingTax).toLocaleString()}</p>
                 </div>
               </div>
 

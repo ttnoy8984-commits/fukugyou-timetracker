@@ -269,8 +269,8 @@ export default function ProjectManager({
                 function rowsFor(list: Project[]) {
                   const rows = list.map((p) => {
                     const totalSeconds = getProjectTotalSeconds(p.id);
-                    const excludingTax = calcAmountExcludingTax(p.contractAmount, p.taxIncluded);
-                    const effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
+                    const includingTax = calcAmountIncludingTax(p.contractAmount, p.taxIncluded);
+                    const effectiveRate = calcEffectiveHourlyRate(totalSeconds, includingTax);
                     const client = clients.find((c) => c.id === p.clientId);
                     return { p, totalSeconds, effectiveRate, client };
                   });

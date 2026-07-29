@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppData, TimeEntry } from "./types";
 import {
   calcAmountExcludingTax,
+  calcAmountIncludingTax,
   calcEffectiveHourlyRate,
   createClient,
   createEntry,
@@ -384,14 +385,14 @@ export function useAppData() {
           byProject[e.projectId].byTask[e.taskId].seconds += e.durationSeconds;
         }
       }
-      // 時給は案件の全期間合計時間・税抜金額で計算（月跨ぎ対応）
+      // 時給は案件の全期間合計時間・税込金額で計算（月跨ぎ対応、請求ベースに合わせる）
       for (const [projectId, row] of Object.entries(byProject)) {
         const totalSeconds = data.entries
           .filter((e) => e.projectId === projectId && e.endTime !== null)
           .reduce((sum, e) => sum + e.durationSeconds, 0);
         const project = data.projects.find((p) => p.id === projectId);
-        const excludingTax = project ? calcAmountExcludingTax(project.contractAmount, project.taxIncluded) : row.contractAmount;
-        row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
+        const includingTax = project ? calcAmountIncludingTax(project.contractAmount, project.taxIncluded) : row.contractAmount;
+        row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, includingTax);
       }
 
       // 契約金額合計は「その月に完了した案件」だけを対象にする（複数月にまたがる案件の二重計上を防ぐ）
@@ -412,8 +413,8 @@ export function useAppData() {
     return data.projects.map((p) => {
       const projectEntries = data.entries.filter((e) => e.projectId === p.id && e.endTime !== null);
       const totalSeconds = projectEntries.reduce((sum, e) => sum + e.durationSeconds, 0);
-      const excludingTax = calcAmountExcludingTax(p.contractAmount, p.taxIncluded);
-      const effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
+      const includingTax = calcAmountIncludingTax(p.contractAmount, p.taxIncluded);
+      const effectiveRate = calcEffectiveHourlyRate(totalSeconds, includingTax);
       const byTask: Record<string, { taskName: string; seconds: number }> = {};
       for (const e of projectEntries) {
         if (!e.taskId) continue;
@@ -424,7 +425,7 @@ export function useAppData() {
       }
       return {
         id: p.id, name: p.name, color: p.color,
-        contractAmount: p.contractAmount, excludingTaxAmount: excludingTax,
+        contractAmount: p.contractAmount, includingTaxAmount: includingTax,
         totalSeconds, effectiveRate, byTask,
         completedAt: p.completedAt ?? null,
       };
