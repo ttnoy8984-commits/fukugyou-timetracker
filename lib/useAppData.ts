@@ -391,7 +391,17 @@ export function useAppData() {
         const excludingTax = project ? calcAmountExcludingTax(project.contractAmount, project.taxIncluded) : row.contractAmount;
         row.effectiveRate = calcEffectiveHourlyRate(totalSeconds, excludingTax);
       }
-      return { byProject, entries: monthEntries };
+
+      // 契約金額合計は「その月に完了した案件」だけを対象にする（複数月にまたがる案件の二重計上を防ぐ）
+      const completedThisMonth = data.projects.filter(
+        (p) => p.completedAt && p.completedAt.slice(0, 7) === prefix
+      );
+      const completedContractTotal = completedThisMonth.reduce((sum, p) => sum + p.contractAmount, 0);
+      const completedContractTotalExcludingTax = completedThisMonth.reduce(
+        (sum, p) => sum + calcAmountExcludingTax(p.contractAmount, p.taxIncluded), 0
+      );
+
+      return { byProject, entries: monthEntries, completedContractTotal, completedContractTotalExcludingTax, completedCount: completedThisMonth.length };
     },
     [data]
   );

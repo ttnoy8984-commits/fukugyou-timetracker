@@ -21,6 +21,9 @@ interface Props {
   getMonthlySummary: (year: number, month: number) => {
     byProject: Record<string, ProjectSummary>;
     entries: unknown[];
+    completedContractTotal: number;
+    completedContractTotalExcludingTax: number;
+    completedCount: number;
   };
   getProjectSummaries: () => ProjectTotal[];
 }
@@ -34,10 +37,9 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [reportTab, setReportTab] = useState<ReportTab>("monthly");
 
-  const { byProject } = getMonthlySummary(year, month);
+  const { byProject, completedContractTotal, completedContractTotalExcludingTax, completedCount } = getMonthlySummary(year, month);
   const rows = Object.entries(byProject);
   const totalSeconds = rows.reduce((s, [, r]) => s + r.seconds, 0);
-  const totalContract = rows.reduce((s, [, r]) => s + r.contractAmount, 0);
 
   const years = [now.getFullYear() - 1, now.getFullYear()];
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -85,7 +87,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
             </select>
           </div>
 
-          {rows.length === 0 ? (
+          {rows.length === 0 && completedCount === 0 ? (
             <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
               <p className="text-sm text-gray-400">この月の記録はありません</p>
             </div>
@@ -97,8 +99,9 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                   <p className="text-3xl font-mono font-light text-gray-900">{formatDuration(totalSeconds)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">契約金額合計</p>
-                  <p className="text-3xl font-light text-gray-900">¥{Math.round(totalContract).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">確定金額（完了{completedCount}件・税抜）</p>
+                  <p className="text-3xl font-light text-gray-900">¥{Math.round(completedContractTotalExcludingTax).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">税込 ¥{Math.round(completedContractTotal).toLocaleString()}</p>
                 </div>
               </div>
 
