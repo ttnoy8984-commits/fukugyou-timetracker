@@ -47,7 +47,7 @@ export function DonutChart({
   const active = hovered !== null ? arcs[hovered] : null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-5">
+    <div className="flex flex-col items-center gap-4">
       <div className="relative flex-shrink-0">
         <svg viewBox="0 0 100 100" className="w-40 h-40 -rotate-90">
           {arcs.map((a) => (
