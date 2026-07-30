@@ -163,36 +163,39 @@ export function MonthlyBars({
   );
 }
 
-// 検証済みカテゴリカルパレット（固定順・循環生成しない）
-const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
-
 /**
- * 実体（案件ID・タスク名）から安定した色を決める。
- * 順位ではなく実体に紐づくので、月を切り替えても同じ案件は同じ色のまま。
- * 案件の登録色は重複しがちでグラフの識別に使えないため、グラフ内だけこちらを使う。
+ * 検証済みカテゴリカルパレット（固定順・循環生成しない）。
+ * この並び順自体がCVD（色覚特性）で隣り合う色が判別できることの担保なので、順番は変えない。
  */
-export function entityColor(key: string) {
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-  return PALETTE[h % PALETTE.length];
+export const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+export const OTHER_COLOR = "#c3c2b7";
+
+/** 一覧側の色。ドーナツと同じ「時間の多い順」に割り当てるので上位は必ず一致する。 */
+export function rankColor(index: number) {
+  return PALETTE[index % PALETTE.length];
 }
 
-/** 上位n件＋「その他」にまとめる（ドーナツは6セグメントが上限） */
+/**
+ * 上位n件＋「その他」にまとめる（ドーナツは6セグメントが上限）。
+ * 色はパレットの固定順で先頭から割り当てる。案件の登録色は重複しがちで
+ * 円グラフだと隣同士が同じ色になり判別できなくなるため、グラフ内では使わない。
+ */
 export function foldToTop<T>(
   items: T[],
   getValue: (x: T) => number,
   getLabel: (x: T) => string,
-  getColor: (x: T) => string,
   topN = 5
 ): Slice[] {
   const sorted = [...items].filter((x) => getValue(x) > 0).sort((a, b) => getValue(b) - getValue(a));
-  const head = sorted.slice(0, topN).map((x) => ({ label: getLabel(x), value: getValue(x), color: getColor(x) }));
+  const head = sorted.slice(0, topN).map((x, i) => ({
+    label: getLabel(x), value: getValue(x), color: PALETTE[i],
+  }));
   const tail = sorted.slice(topN);
   if (tail.length > 0) {
     head.push({
       label: `その他（${tail.length}件）`,
       value: tail.reduce((s, x) => s + getValue(x), 0),
-      color: "#c3c2b7",
+      color: OTHER_COLOR,
     });
   }
   return head;

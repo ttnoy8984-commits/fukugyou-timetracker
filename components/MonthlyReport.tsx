@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { calcAmountIncludingTax, formatDuration } from "@/lib/storage";
-import { DonutChart, MonthlyBars, StatTile, foldToTop, entityColor, Slice } from "./charts";
+import { DonutChart, MonthlyBars, StatTile, foldToTop, rankColor, Slice } from "./charts";
 
 interface TaskSummary { taskName: string; seconds: number; }
 
@@ -47,13 +47,13 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
 
   // ===== 月次 =====
   const { byProject, completedContractTotal, completedContractTotalExcludingTax, completedCount } = getMonthlySummary(year, month);
-  const rows = Object.entries(byProject);
+  const rows = Object.entries(byProject).sort((a, b) => b[1].seconds - a[1].seconds);
   const totalSeconds = rows.reduce((s, [, r]) => s + r.seconds, 0);
   const monthAvgRate = totalSeconds > 0 ? completedContractTotal / (totalSeconds / 3600) : 0;
 
   const monthProjectSlices = foldToTop(
     rows,
-    ([, r]) => r.seconds, ([, r]) => r.name, ([id]) => entityColor(id)
+    ([, r]) => r.seconds, ([, r]) => r.name
   );
   const monthTaskTotals: Record<string, number> = {};
   rows.forEach(([, r]) => {
@@ -63,7 +63,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   });
   const monthTaskSlices: Slice[] = foldToTop(
     Object.entries(monthTaskTotals),
-    ([, sec]) => sec, ([name]) => name, ([name]) => entityColor(name)
+    ([, sec]) => sec, ([name]) => name
   );
 
   // ===== 年次 =====
@@ -97,11 +97,11 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   });
   const yearProjectSlices = foldToTop(
     Object.values(yearProjectTotals),
-    (r) => r.seconds, (r) => r.name, (r) => entityColor(r.id)
+    (r) => r.seconds, (r) => r.name
   );
   const yearTaskSlices: Slice[] = foldToTop(
     Object.entries(yearTaskTotals),
-    ([, sec]) => sec, ([name]) => name, ([name]) => entityColor(name)
+    ([, sec]) => sec, ([name]) => name
   );
 
   // ===== 案件分析 =====
@@ -182,10 +182,10 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                   <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">案件別の詳細</h2>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {rows.map(([projectId, r]) => {
+                  {rows.map(([projectId, r], ri) => {
                     const taskRows = Object.values(r.byTask).sort((a, b) => b.seconds - a.seconds);
                     const isExpanded = expandedProject === projectId;
-                    const c = entityColor(projectId);
+                    const c = rankColor(ri);
                     return (
                       <div key={projectId}>
                         <div className="px-6 py-4 space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
