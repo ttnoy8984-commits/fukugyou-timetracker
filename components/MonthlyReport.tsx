@@ -8,7 +8,7 @@ interface TaskSummary { taskName: string; seconds: number; }
 
 interface ProjectSummary {
   seconds: number; contractAmount: number; taxIncluded: boolean; effectiveRate: number;
-  name: string; color: string;
+  name: string; color: string; clientName: string;
   byTask: Record<string, TaskSummary>;
 }
 
@@ -84,20 +84,19 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const activeMonths = monthlyBreakdown.filter((m) => m.seconds > 0).length;
 
   // 年間の案件別・タスク別を積み上げ
-  const yearProjectTotals: Record<string, { id: string; name: string; seconds: number }> = {};
+  const yearClientTotals: Record<string, number> = {};
   const yearTaskTotals: Record<string, number> = {};
   monthlyBreakdown.forEach((m) => {
-    Object.entries(m.byProject).forEach(([pid, r]) => {
-      if (!yearProjectTotals[pid]) yearProjectTotals[pid] = { id: pid, name: r.name, seconds: 0 };
-      yearProjectTotals[pid].seconds += r.seconds;
+    Object.values(m.byProject).forEach((r) => {
+      yearClientTotals[r.clientName] = (yearClientTotals[r.clientName] ?? 0) + r.seconds;
       Object.values(r.byTask).forEach((t) => {
         yearTaskTotals[t.taskName] = (yearTaskTotals[t.taskName] ?? 0) + t.seconds;
       });
     });
   });
-  const yearProjectSlices = foldToTop(
-    Object.values(yearProjectTotals),
-    (r) => r.seconds, (r) => r.name
+  const yearClientSlices = foldToTop(
+    Object.entries(yearClientTotals),
+    ([, sec]) => sec, ([name]) => name
   );
   const yearTaskSlices: Slice[] = foldToTop(
     Object.entries(yearTaskTotals),
@@ -266,8 +265,8 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
 
               <div className="grid lg:grid-cols-2 gap-3">
                 <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">案件別の時間比率</h2>
-                  <DonutChart slices={yearProjectSlices} formatValue={hours} centerLabel="年間" />
+                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">クライアント別の時間比率</h2>
+                  <DonutChart slices={yearClientSlices} formatValue={hours} centerLabel="年間" />
                 </div>
                 <div className="bg-white rounded-2xl border border-gray-100 p-5">
                   <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">タスク別の時間比率</h2>

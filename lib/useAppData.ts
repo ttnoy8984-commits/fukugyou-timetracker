@@ -364,7 +364,7 @@ export function useAppData() {
       );
       const byProject: Record<string, {
         seconds: number; contractAmount: number; taxIncluded: boolean; effectiveRate: number;
-        name: string; color: string;
+        name: string; color: string; clientName: string;
         byTask: Record<string, { taskName: string; seconds: number }>;
       }> = {};
       for (const e of monthEntries) {
@@ -374,7 +374,9 @@ export function useAppData() {
         if (!byProject[e.projectId]) {
           byProject[e.projectId] = {
             seconds: 0, contractAmount: project.contractAmount, taxIncluded: project.taxIncluded, effectiveRate: 0,
-            name: project.name, color: project.color, byTask: {},
+            name: project.name, color: project.color,
+            clientName: (data.clients ?? []).find((c) => c.id === project.clientId)?.name ?? "クライアント未設定",
+            byTask: {},
           };
         }
         byProject[e.projectId].seconds += e.durationSeconds;
