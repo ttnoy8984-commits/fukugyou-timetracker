@@ -123,41 +123,61 @@ export function MonthlyBars({
   formatValue: (v: number) => string;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const max = Math.max(...data.map((d) => d.seconds), 1);
+  const maxSeconds = Math.max(...data.map((d) => d.seconds), 1);
+
+  // 軸の上限を「きりのいい時間」に丸める（例: 実測37h → 目盛りは0/10/20/30/40h）
+  const maxHours = maxSeconds / 3600;
+  const step = maxHours <= 10 ? 2 : maxHours <= 25 ? 5 : maxHours <= 50 ? 10 : maxHours <= 100 ? 20 : 50;
+  const axisMaxHours = Math.ceil(maxHours / step) * step;
+  const axisMaxSeconds = axisMaxHours * 3600;
+  const ticks = Array.from({ length: axisMaxHours / step + 1 }, (_, i) => axisMaxHours - i * step);
 
   return (
-    <div>
-      <div className="flex items-end gap-1.5 h-32">
-        {data.map((d, i) => {
-          const h = (d.seconds / max) * 100;
-          return (
-            <div
-              key={d.month}
-              className="flex-1 flex flex-col justify-end h-full relative"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              {hovered === i && d.seconds > 0 && (
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-gray-900 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap z-10">
-                  {formatValue(d.seconds)}
-                  {d.count > 0 && <span className="text-gray-300 ml-1.5">¥{Math.round(d.amount).toLocaleString()}</span>}
-                </div>
-              )}
-              <div
-                className="w-full rounded-t transition-colors"
-                style={{
-                  height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
-                  backgroundColor: hovered === i ? "#2a78d6" : "#86b6ef",
-                }}
-              />
-            </div>
-          );
-        })}
+    <div className="flex gap-2">
+      {/* Y軸（時間の目盛り） */}
+      <div className="flex flex-col justify-between h-32 text-[10px] text-gray-400 text-right w-8 flex-shrink-0 py-0">
+        {ticks.map((t) => <div key={t}>{t}h</div>)}
       </div>
-      <div className="flex gap-1.5 mt-1.5">
-        {data.map((d) => (
-          <div key={d.month} className="flex-1 text-center text-[10px] text-gray-400">{d.month}</div>
-        ))}
+
+      <div className="flex-1 min-w-0">
+        <div className="relative h-32">
+          {/* 横方向のグリッド線 */}
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {ticks.map((t) => <div key={t} className="border-t border-gray-100 w-full" />)}
+          </div>
+          <div className="absolute inset-0 flex items-end gap-1.5">
+            {data.map((d, i) => {
+              const h = (d.seconds / axisMaxSeconds) * 100;
+              return (
+                <div
+                  key={d.month}
+                  className="flex-1 flex flex-col justify-end h-full relative"
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  {hovered === i && d.seconds > 0 && (
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-gray-900 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap z-10">
+                      {formatValue(d.seconds)}
+                      {d.count > 0 && <span className="text-gray-300 ml-1.5">¥{Math.round(d.amount).toLocaleString()}</span>}
+                    </div>
+                  )}
+                  <div
+                    className="w-full rounded-t transition-colors"
+                    style={{
+                      height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
+                      backgroundColor: hovered === i ? "#2a78d6" : "#86b6ef",
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex gap-1.5 mt-1.5">
+          {data.map((d) => (
+            <div key={d.month} className="flex-1 text-center text-[10px] text-gray-400">{d.month}</div>
+          ))}
+        </div>
       </div>
     </div>
   );
