@@ -163,6 +163,20 @@ export function MonthlyBars({
   );
 }
 
+// 検証済みカテゴリカルパレット（固定順・循環生成しない）
+const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+
+/**
+ * 実体（案件ID・タスク名）から安定した色を決める。
+ * 順位ではなく実体に紐づくので、月を切り替えても同じ案件は同じ色のまま。
+ * 案件の登録色は重複しがちでグラフの識別に使えないため、グラフ内だけこちらを使う。
+ */
+export function entityColor(key: string) {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
 /** 上位n件＋「その他」にまとめる（ドーナツは6セグメントが上限） */
 export function foldToTop<T>(
   items: T[],

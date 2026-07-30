@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { calcAmountIncludingTax, formatDuration } from "@/lib/storage";
-import { DonutChart, MonthlyBars, StatTile, foldToTop, Slice } from "./charts";
+import { DonutChart, MonthlyBars, StatTile, foldToTop, entityColor, Slice } from "./charts";
 
 interface TaskSummary { taskName: string; seconds: number; }
 
@@ -31,16 +31,6 @@ interface Props {
 
 type ReportTab = "monthly" | "yearly" | "projects";
 
-// 検証済みカテゴリカルパレット（固定順・循環させない）
-const TASK_PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
-
-/** タスク名から安定した色を決める（順位ではなく実体に色を紐づけるため） */
-function taskColor(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return TASK_PALETTE[h % TASK_PALETTE.length];
-}
-
 function hours(seconds: number) {
   return `${(seconds / 3600).toFixed(1)}h`;
 }
@@ -62,8 +52,8 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const monthAvgRate = totalSeconds > 0 ? completedContractTotal / (totalSeconds / 3600) : 0;
 
   const monthProjectSlices = foldToTop(
-    rows.map(([, r]) => r),
-    (r) => r.seconds, (r) => r.name, (r) => r.color
+    rows,
+    ([, r]) => r.seconds, ([, r]) => r.name, ([id]) => entityColor(id)
   );
   const monthTaskTotals: Record<string, number> = {};
   rows.forEach(([, r]) => {
@@ -73,7 +63,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   });
   const monthTaskSlices: Slice[] = foldToTop(
     Object.entries(monthTaskTotals),
-    ([, sec]) => sec, ([name]) => name, ([name]) => taskColor(name)
+    ([, sec]) => sec, ([name]) => name, ([name]) => entityColor(name)
   );
 
   // ===== 年次 =====
@@ -94,11 +84,11 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const activeMonths = monthlyBreakdown.filter((m) => m.seconds > 0).length;
 
   // 年間の案件別・タスク別を積み上げ
-  const yearProjectTotals: Record<string, { name: string; color: string; seconds: number }> = {};
+  const yearProjectTotals: Record<string, { id: string; name: string; seconds: number }> = {};
   const yearTaskTotals: Record<string, number> = {};
   monthlyBreakdown.forEach((m) => {
     Object.entries(m.byProject).forEach(([pid, r]) => {
-      if (!yearProjectTotals[pid]) yearProjectTotals[pid] = { name: r.name, color: r.color, seconds: 0 };
+      if (!yearProjectTotals[pid]) yearProjectTotals[pid] = { id: pid, name: r.name, seconds: 0 };
       yearProjectTotals[pid].seconds += r.seconds;
       Object.values(r.byTask).forEach((t) => {
         yearTaskTotals[t.taskName] = (yearTaskTotals[t.taskName] ?? 0) + t.seconds;
@@ -107,11 +97,11 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   });
   const yearProjectSlices = foldToTop(
     Object.values(yearProjectTotals),
-    (r) => r.seconds, (r) => r.name, (r) => r.color
+    (r) => r.seconds, (r) => r.name, (r) => entityColor(r.id)
   );
   const yearTaskSlices: Slice[] = foldToTop(
     Object.entries(yearTaskTotals),
-    ([, sec]) => sec, ([name]) => name, ([name]) => taskColor(name)
+    ([, sec]) => sec, ([name]) => name, ([name]) => entityColor(name)
   );
 
   // ===== 案件分析 =====
@@ -195,13 +185,14 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                   {rows.map(([projectId, r]) => {
                     const taskRows = Object.values(r.byTask).sort((a, b) => b.seconds - a.seconds);
                     const isExpanded = expandedProject === projectId;
+                    const c = entityColor(projectId);
                     return (
                       <div key={projectId}>
                         <div className="px-6 py-4 space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
                           onClick={() => setExpandedProject(isExpanded ? null : projectId)}>
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />
                               <span className="text-sm font-medium text-gray-800 truncate">{r.name}</span>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
@@ -213,7 +204,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                           </div>
                           <div className="w-full bg-gray-100 rounded-full h-1">
                             <div className="h-1 rounded-full" style={{
-                              backgroundColor: r.color,
+                              backgroundColor: c,
                               width: totalSeconds > 0 ? `${(r.seconds / totalSeconds) * 100}%` : "0%",
                             }} />
                           </div>
@@ -229,7 +220,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-1">
                                   <div className="h-1 rounded-full" style={{
-                                    backgroundColor: r.color, opacity: 0.6,
+                                    backgroundColor: c, opacity: 0.6,
                                     width: r.seconds > 0 ? `${(t.seconds / r.seconds) * 100}%` : "0%",
                                   }} />
                                 </div>
