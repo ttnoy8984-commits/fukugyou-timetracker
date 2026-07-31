@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppData } from "@/lib/useAppData";
 import { loadSeedData } from "@/lib/seed";
 import Timer from "@/components/Timer";
@@ -17,6 +17,13 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "report", label: "レポート" },
 ];
 
+/** 0→A, 1→B, ... 25→Z, 26→AA */
+function letter(i: number) {
+  let s = "";
+  do { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; } while (i >= 0);
+  return s;
+}
+
 export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
@@ -26,12 +33,58 @@ export default function Home() {
 
   const [tab, setTab] = useState<Tab>("timer");
   const [showSeed, setShowSeed] = useState(false);
+  const [privacy, setPrivacy] = useState(false);
 
   function handleLoadSeed() {
     const d = loadSeedData();
     window.location.reload();
     void d;
   }
+
+  /*
+   * スクショ共有用のマスク。全部を「****」にすると円グラフの凡例が
+   * 区別できなくなり数字が読めないので、案件A/クライアントBのように
+   * 通し記号に置き換える（実名は伏せつつ内訳は読める）。
+   * 記号は登録順で決まるので、月を切り替えても同じ案件は同じ記号のまま。
+   */
+  const mask = useMemo(() => {
+    const project = new Map<string, string>();
+    data.projects.forEach((p, i) => project.set(p.id, `案件${letter(i)}`));
+    const client = new Map<string, string>();
+    data.clients.forEach((c, i) => client.set(c.name, `クライアント${letter(i)}`));
+    return { project, client };
+  }, [data.projects, data.clients]);
+
+  const viewData = useMemo(() => {
+    if (!privacy) return data;
+    return {
+      ...data,
+      projects: data.projects.map((p) => ({ ...p, name: mask.project.get(p.id) ?? p.name })),
+      clients: data.clients.map((c) => ({ ...c, name: mask.client.get(c.name) ?? c.name })),
+      entries: data.entries.map((e) => ({ ...e, note: e.note ? "***" : "" })),
+    };
+  }, [privacy, data, mask]);
+
+  // レポートは集計済みの値を返すので、そちらにもマスクをかける
+  const viewMonthlySummary = (y: number, m: number) => {
+    const s = getMonthlySummary(y, m);
+    if (!privacy) return s;
+    return {
+      ...s,
+      byProject: Object.fromEntries(
+        Object.entries(s.byProject).map(([id, r]) => [
+          id,
+          { ...r, name: mask.project.get(id) ?? r.name, clientName: mask.client.get(r.clientName) ?? r.clientName },
+        ])
+      ),
+    };
+  };
+
+  const viewProjectSummaries = () => {
+    const list = getProjectSummaries();
+    if (!privacy) return list;
+    return list.map((p) => ({ ...p, name: mask.project.get(p.id) ?? p.name }));
+  };
 
   return (
     <div className="min-h-screen bg-base">
@@ -40,6 +93,9 @@ export default function Home() {
         <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold text-ink tracking-tight">副業タイムトラッカー</h1>
+            {privacy && (
+              <p className="text-[10px] text-accent-text mt-0.5">案件名を伏せて表示中</p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {activeEntry && (
@@ -60,7 +116,16 @@ export default function Home() {
                 ⋯
               </button>
               {showSeed && (
-                <div className="absolute right-0 top-6 bg-white border border-line rounded-xl shadow-lg p-2 z-50 w-44">
+                <div className="absolute right-0 top-6 bg-white border border-line rounded-xl shadow-lg p-2 z-50 w-56">
+                  <button
+                    onClick={() => { setPrivacy(!privacy); setShowSeed(false); }}
+                    className="w-full text-left text-xs text-ink-2 hover:text-ink px-3 py-2 rounded-lg hover:bg-tint transition-colors flex items-center justify-between gap-2"
+                  >
+                    <span>案件名を伏せる</span>
+                    <span className={`w-8 h-4 rounded-full flex-shrink-0 relative transition-colors ${privacy ? "bg-accent-strong" : "bg-line"}`}>
+                      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${privacy ? "left-4" : "left-0.5"}`} />
+                    </span>
+                  </button>
                   <button
                     onClick={handleLoadSeed}
                     className="w-full text-left text-xs text-ink-2 hover:text-ink px-3 py-2 rounded-lg hover:bg-tint transition-colors"
@@ -97,8 +162,8 @@ export default function Home() {
       <main className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-8">
         {tab === "timer" && (
           <Timer
-            projects={data.projects}
-            tasks={data.tasks}
+            projects={viewData.projects}
+            tasks={viewData.tasks}
             activeEntry={activeEntry}
             elapsed={elapsed}
             isPaused={isPaused}
@@ -112,9 +177,9 @@ export default function Home() {
         )}
         {tab === "projects" && (
           <ProjectManager
-            projects={data.projects}
-            tasks={data.tasks}
-            clients={data.clients ?? []}
+            projects={viewData.projects}
+            tasks={viewData.tasks}
+            clients={viewData.clients ?? []}
             onAddProject={addProject}
             onUpdateProject={updateProject}
             onDeleteProject={deleteProject}
@@ -130,7 +195,7 @@ export default function Home() {
             onAddClient={addClient}
             onRenameClient={renameClient}
             onDeleteClient={deleteClient}
-            taskGroups={data.taskGroups ?? []}
+            taskGroups={viewData.taskGroups ?? []}
             getProjectTotalSeconds={getProjectTotalSeconds}
             getTaskTotalSeconds={getTaskTotalSeconds}
             getProjectTaskBreakdown={getProjectTaskBreakdown}
@@ -138,15 +203,15 @@ export default function Home() {
         )}
         {tab === "log" && (
           <EntryLog
-            entries={data.entries}
-            projects={data.projects}
-            tasks={data.tasks}
+            entries={viewData.entries}
+            projects={viewData.projects}
+            tasks={viewData.tasks}
             onDelete={deleteEntry}
             onUpdate={updateEntry}
           />
         )}
         {tab === "report" && (
-          <MonthlyReport getMonthlySummary={getMonthlySummary} getProjectSummaries={getProjectSummaries} />
+          <MonthlyReport getMonthlySummary={viewMonthlySummary} getProjectSummaries={viewProjectSummaries} />
         )}
       </main>
     </div>
