@@ -127,7 +127,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
       <div className="flex gap-1 bg-line-2 rounded-xl p-1 w-fit">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setReportTab(t.key)}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}>
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-white text-accent-text font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}>
             {t.label}
           </button>
         ))}

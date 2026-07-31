@@ -433,7 +433,7 @@ export default function ProjectManager({
                     </div>
                     {completedRows.length > 0 && (
                       <div>
-                        <button onClick={() => setShowCompleted(!showCompleted)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors mb-2">
+                        <button onClick={() => setShowCompleted(!showCompleted)} className="text-xs text-accent-text hover:text-accent-deep transition-colors mb-2">
                           完了した案件（{completedRows.length}件）{showCompleted ? "を隠す" : "を表示"}
                         </button>
                         {showCompleted && (
