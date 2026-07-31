@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { calcAmountIncludingTax, formatDuration } from "@/lib/storage";
-import { DonutChart, MonthlyBars, StatTile, foldToTop, rankColor, Slice } from "./charts";
+import { DonutChart, TimeBars, StatTile, foldToTop, rankColor, Slice, TimeBar } from "./charts";
 
 interface TaskSummary { taskName: string; seconds: number; }
 
@@ -21,7 +21,7 @@ interface ProjectTotal {
 interface Props {
   getMonthlySummary: (year: number, month: number) => {
     byProject: Record<string, ProjectSummary>;
-    entries: unknown[];
+    entries: { date: string; durationSeconds: number }[];
     completedContractTotal: number;
     completedContractTotalExcludingTax: number;
     completedCount: number;
@@ -46,7 +46,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   // ===== 月次 =====
-  const { byProject, completedContractTotal, completedContractTotalExcludingTax, completedCount } = getMonthlySummary(year, month);
+  const { byProject, entries: monthEntries, completedContractTotal, completedContractTotalExcludingTax, completedCount } = getMonthlySummary(year, month);
   const rows = Object.entries(byProject).sort((a, b) => b[1].seconds - a[1].seconds);
   const totalSeconds = rows.reduce((s, [, r]) => s + r.seconds, 0);
   const monthAvgRate = totalSeconds > 0 ? completedContractTotal / (totalSeconds / 3600) : 0;
@@ -65,6 +65,25 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
     Object.entries(monthTaskTotals),
     ([, sec]) => sec, ([name]) => name
   );
+
+  // 日別の作業時間（その月の日数ぶん、作業がない日も0で並べる）
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dailySeconds: Record<number, number> = {};
+  monthEntries.forEach((e) => {
+    const day = Number(e.date.slice(8, 10));
+    dailySeconds[day] = (dailySeconds[day] ?? 0) + e.durationSeconds;
+  });
+  const dailyBars: TimeBar[] = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const dow = new Date(year, month - 1, day).getDay();
+    return {
+      key: day,
+      label: String(day),
+      seconds: dailySeconds[day] ?? 0,
+      muted: dow === 0 || dow === 6, // 土日は淡く
+    };
+  });
+  const workedDays = dailyBars.filter((d) => d.seconds > 0).length;
 
   // ===== 年次 =====
   const monthlyBreakdown = months.map((m) => {
@@ -160,7 +179,19 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                   sub={`完了${completedCount}件 · 税抜 ¥${Math.round(completedContractTotalExcludingTax).toLocaleString()}`} />
                 <StatTile label="平均時給" value={monthAvgRate > 0 ? `¥${Math.round(monthAvgRate).toLocaleString()}` : "—"}
                   sub={monthAvgRate > 0 ? "確定金額 ÷ 作業時間" : "完了案件なし"} />
-                <StatTile label="1日あたり" value={hours(totalSeconds / new Date(year, month, 0).getDate())} sub="月平均" />
+                <StatTile label="稼働日あたり" value={workedDays > 0 ? hours(totalSeconds / workedDays) : "—"} sub={`稼働${workedDays}日`} />
+              </div>
+
+              {/* 日別の作業時間 */}
+              <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">日別の作業時間</h2>
+                <TimeBars
+                  data={dailyBars}
+                  formatValue={formatDuration}
+                  labelEvery={2}
+                  gap="gap-[3px]"
+                />
+                <p className="text-xs text-ink-3 mt-3">淡い列は土日です</p>
               </div>
 
               {/* 比率チャート */}
@@ -260,7 +291,15 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
 
               <div className="bg-white rounded-2xl border border-line-2 p-5">
                 <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">月別の作業時間</h2>
-                <MonthlyBars data={monthlyBreakdown} formatValue={formatDuration} />
+                <TimeBars
+                  data={monthlyBreakdown.map((m) => ({
+                    key: m.month,
+                    label: `${m.month}`,
+                    seconds: m.seconds,
+                    extra: m.count > 0 ? `¥${Math.round(m.amount).toLocaleString()}` : undefined,
+                  }))}
+                  formatValue={formatDuration}
+                />
               </div>
 
               <div className="grid lg:grid-cols-2 gap-3">

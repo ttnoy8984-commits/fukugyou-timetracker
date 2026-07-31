@@ -115,57 +115,81 @@ export function StatTile({
   );
 }
 
-/** 月別推移のカラムチャート（時系列の大小比較なので単一色） */
-export function MonthlyBars({
-  data, formatValue,
+export interface TimeBar {
+  key: string | number;
+  label: string;
+  seconds: number;
+  /** ツールチップに時間と併記する補足（金額など） */
+  extra?: string;
+  /** 土日など、目立たせなくてよい列 */
+  muted?: boolean;
+}
+
+/**
+ * 時間の推移を見るカラムチャート（月別・日別で共用）。
+ * 時系列の大小比較なので色は単一。Y軸はきりのいい時間に丸めて目盛りを出す。
+ */
+export function TimeBars({
+  data, formatValue, labelEvery = 1, height = "h-32", gap = "gap-1.5",
 }: {
-  data: { month: number; seconds: number; amount: number; count: number }[];
+  data: TimeBar[];
   formatValue: (v: number) => string;
+  /** ラベルを何本おきに出すか（日別は本数が多いので間引く） */
+  labelEvery?: number;
+  height?: string;
+  gap?: string;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const maxSeconds = Math.max(...data.map((d) => d.seconds), 1);
 
   // 軸の上限を「きりのいい時間」に丸める（例: 実測37h → 目盛りは0/10/20/30/40h）
   const maxHours = maxSeconds / 3600;
-  const step = maxHours <= 10 ? 2 : maxHours <= 25 ? 5 : maxHours <= 50 ? 10 : maxHours <= 100 ? 20 : 50;
+  const step =
+    maxHours <= 2 ? 0.5 : maxHours <= 5 ? 1 : maxHours <= 10 ? 2
+    : maxHours <= 25 ? 5 : maxHours <= 50 ? 10 : maxHours <= 100 ? 20 : 50;
   const axisMaxHours = Math.ceil(maxHours / step) * step;
   const axisMaxSeconds = axisMaxHours * 3600;
-  const ticks = Array.from({ length: axisMaxHours / step + 1 }, (_, i) => axisMaxHours - i * step);
+  const tickCount = Math.round(axisMaxHours / step) + 1;
+  const ticks = Array.from({ length: tickCount }, (_, i) =>
+    Number((axisMaxHours - i * step).toFixed(1))
+  );
 
   return (
     <div className="flex gap-2">
       {/* Y軸（時間の目盛り） */}
-      <div className="flex flex-col justify-between h-32 text-[10px] text-ink-3 text-right w-8 flex-shrink-0 py-0">
+      <div className={`flex flex-col justify-between ${height} text-[10px] text-ink-3 text-right w-8 flex-shrink-0`}>
         {ticks.map((t) => <div key={t}>{t}h</div>)}
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="relative h-32">
+        <div className={`relative ${height}`}>
           {/* 横方向のグリッド線 */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {ticks.map((t) => <div key={t} className="border-t border-line-2 w-full" />)}
           </div>
-          <div className="absolute inset-0 flex items-end gap-1.5">
+          <div className={`absolute inset-0 flex items-end ${gap}`}>
             {data.map((d, i) => {
               const h = (d.seconds / axisMaxSeconds) * 100;
               return (
                 <div
-                  key={d.month}
+                  key={d.key}
                   className="flex-1 flex flex-col justify-end h-full relative"
                   onMouseEnter={() => setHovered(i)}
                   onMouseLeave={() => setHovered(null)}
                 >
                   {hovered === i && d.seconds > 0 && (
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-accent-strong text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap z-10">
+                      <span className="text-accent-100 mr-1.5">{d.label}</span>
                       {formatValue(d.seconds)}
-                      {d.count > 0 && <span className="text-accent-100 ml-1.5">¥{Math.round(d.amount).toLocaleString()}</span>}
+                      {d.extra && <span className="text-accent-100 ml-1.5">{d.extra}</span>}
                     </div>
                   )}
                   <div
                     className="w-full rounded-t transition-colors"
                     style={{
                       height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
-                      backgroundColor: hovered === i ? "#1d7979" : "#28a6a5",
+                      backgroundColor:
+                        hovered === i ? "#1d7979" : d.muted ? "#9ecfce" : "#28a6a5",
                     }}
                   />
                 </div>
@@ -173,9 +197,11 @@ export function MonthlyBars({
             })}
           </div>
         </div>
-        <div className="flex gap-1.5 mt-1.5">
-          {data.map((d) => (
-            <div key={d.month} className="flex-1 text-center text-[10px] text-ink-3">{d.month}</div>
+        <div className={`flex ${gap} mt-1.5`}>
+          {data.map((d, i) => (
+            <div key={d.key} className="flex-1 text-center text-[10px] text-ink-3">
+              {i % labelEvery === 0 ? d.label : ""}
+            </div>
           ))}
         </div>
       </div>
