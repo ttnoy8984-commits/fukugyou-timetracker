@@ -4,9 +4,10 @@ import { Fragment, useState } from "react";
 import { Client, Project, Task, TaskGroup } from "@/lib/types";
 import { calcAmountExcludingTax, calcAmountIncludingTax, calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
+// 明度・彩度を揃えて色相だけ回した中間色。並べたときにトーンが揃って見える
 const PRESET_COLORS = [
-  "#ef4444","#f97316","#eab308","#22c55e","#14b8a6",
-  "#3b82f6","#6366f1","#a855f7","#ec4899","#64748b",
+  "#4c8cd2","#00a0a0","#0fa17a","#589c55","#a3a53e",
+  "#c59634","#c66e45","#ca6862","#c3678d","#9576c9",
 ];
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
@@ -77,7 +78,7 @@ export default function ProjectManager({
   // 案件フォーム
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
-  const [color, setColor] = useState("#6366f1");
+  const [color, setColor] = useState("#4c8cd2");
   const [taxIncluded, setTaxIncluded] = useState(true);
   const [clientId, setClientId] = useState("");
   const [addingClientInline, setAddingClientInline] = useState(false);
@@ -115,7 +116,7 @@ export default function ProjectManager({
 
   function closeModal() {
     setModal(null); setEditingProject(null);
-    setName(""); setRate(""); setColor("#6366f1");
+    setName(""); setRate(""); setColor("#4c8cd2");
     setTaxIncluded(true); setClientId("");
     setAddingClientInline(false); setInlineClientName("");
     setProjectTaskIds([]); setAddingProjectTask(false); setProjectNewTaskName("");
