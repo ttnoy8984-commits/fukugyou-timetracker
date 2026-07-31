@@ -34,18 +34,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f8f7]">
+    <div className="min-h-screen bg-base">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100">
+      <header className="bg-white border-b border-line-2">
         <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 tracking-tight">副業タイムトラッカー</h1>
+            <h1 className="text-lg font-semibold text-ink tracking-tight">副業タイムトラッカー</h1>
           </div>
           <div className="flex items-center gap-3">
             {activeEntry && (
               <div className="flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? "bg-amber-400" : "bg-gray-900 animate-pulse"}`} />
-                <span className="text-sm font-mono text-gray-700">
+                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? "bg-amber-400" : "bg-accent-strong animate-pulse"}`} />
+                <span className="text-sm font-mono text-ink-2">
                   {String(Math.floor(elapsed / 3600)).padStart(2, "0")}:
                   {String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:
                   {String(elapsed % 60).padStart(2, "0")}
@@ -55,15 +55,15 @@ export default function Home() {
             <div className="relative">
               <button
                 onClick={() => setShowSeed(!showSeed)}
-                className="text-xs text-gray-300 hover:text-gray-500 transition-colors"
+                className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
               >
                 ⋯
               </button>
               {showSeed && (
-                <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-50 w-44">
+                <div className="absolute right-0 top-6 bg-white border border-line rounded-xl shadow-lg p-2 z-50 w-44">
                   <button
                     onClick={handleLoadSeed}
-                    className="w-full text-left text-xs text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full text-left text-xs text-ink-2 hover:text-ink px-3 py-2 rounded-lg hover:bg-tint transition-colors"
                   >
                     サンプルデータを読み込む
                   </button>
@@ -75,7 +75,7 @@ export default function Home() {
       </header>
 
       {/* Nav */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <nav className="bg-white border-b border-line-2 sticky top-0 z-10">
         <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 flex gap-6">
           {tabs.map((t) => (
             <button
@@ -83,8 +83,8 @@ export default function Home() {
               onClick={() => setTab(t.key)}
               className={`py-3 text-sm transition-colors border-b-2 ${
                 tab === t.key
-                  ? "border-gray-900 text-gray-900 font-medium"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
+                  ? "border-accent-strong text-ink font-medium"
+                  : "border-transparent text-ink-3 hover:text-ink-2"
               }`}
             >
               {t.label}

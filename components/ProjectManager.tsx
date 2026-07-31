@@ -14,7 +14,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
     <div className="flex flex-wrap gap-2">
       {PRESET_COLORS.map((c) => (
         <button key={c} type="button" onClick={() => onChange(c)}
-          className={`w-8 h-8 rounded-full border-2 transition-transform ${value === c ? "border-gray-800 scale-110" : "border-transparent"}`}
+          className={`w-8 h-8 rounded-full border-2 transition-transform ${value === c ? "border-accent-strong scale-110" : "border-transparent"}`}
           style={{ backgroundColor: c }} />
       ))}
     </div>
@@ -228,17 +228,17 @@ export default function ProjectManager({
   return (
     <div className="space-y-4">
       {/* セクション切替 */}
-      <div className="flex gap-1 bg-white border border-gray-100 rounded-xl p-1">
+      <div className="flex gap-1 bg-white border border-line-2 rounded-xl p-1">
         <button onClick={() => setSection("projects")}
-          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "projects" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"}`}>
+          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "projects" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"}`}>
           案件
         </button>
         <button onClick={() => setSection("tasks")}
-          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "tasks" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"}`}>
+          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "tasks" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"}`}>
           タスク
         </button>
         <button onClick={() => setSection("clients")}
-          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "clients" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"}`}>
+          className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "clients" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"}`}>
           クライアント
         </button>
       </div>
@@ -247,13 +247,13 @@ export default function ProjectManager({
       {section === "projects" && (
         <>
           <button onClick={() => setModal("project")}
-            className="w-full bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors">
+            className="w-full bg-accent-strong hover:bg-accent-deep text-white text-sm font-medium py-3 rounded-xl transition-colors">
             + 案件を追加
           </button>
 
           {projects.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">案件がありません</p>
+            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">案件がありません</p>
             </div>
           ) : (
             <>
@@ -263,8 +263,8 @@ export default function ProjectManager({
                   else { setProjectSortKey(key); setProjectSortDir("asc"); }
                 }
                 function sortIcon(key: ProjectSortKey) {
-                  if (projectSortKey !== key) return <span className="text-gray-300 ml-0.5">↕</span>;
-                  return <span className="text-gray-700 ml-0.5">{projectSortDir === "desc" ? "↓" : "↑"}</span>;
+                  if (projectSortKey !== key) return <span className="text-ink-3 ml-0.5">↕</span>;
+                  return <span className="text-ink-2 ml-0.5">{projectSortDir === "desc" ? "↓" : "↑"}</span>;
                 }
                 function rowsFor(list: Project[]) {
                   const rows = list.map((p) => {
@@ -292,30 +292,30 @@ export default function ProjectManager({
                 const completedRows = rowsFor(projects.filter((p) => p.completedAt));
 
                 const headerRow = (
-                  <tr className="border-b border-gray-100 bg-gray-50">
+                  <tr className="border-b border-line-2 bg-tint">
                     <th className="px-4 py-3 w-8" />
                     <th className="text-left px-2 py-3 whitespace-nowrap">
-                      <button onClick={() => handleProjectSort("name")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      <button onClick={() => handleProjectSort("name")} className="text-xs font-medium text-ink-2 hover:text-ink">
                         案件名{sortIcon("name")}
                       </button>
                     </th>
                     <th className="text-left px-2 py-3 whitespace-nowrap">
-                      <button onClick={() => handleProjectSort("client")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      <button onClick={() => handleProjectSort("client")} className="text-xs font-medium text-ink-2 hover:text-ink">
                         クライアント{sortIcon("client")}
                       </button>
                     </th>
                     <th className="text-right px-2 py-3 whitespace-nowrap">
-                      <button onClick={() => handleProjectSort("amount")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      <button onClick={() => handleProjectSort("amount")} className="text-xs font-medium text-ink-2 hover:text-ink">
                         契約金額{sortIcon("amount")}
                       </button>
                     </th>
                     <th className="text-right px-2 py-3 whitespace-nowrap">
-                      <button onClick={() => handleProjectSort("rate")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      <button onClick={() => handleProjectSort("rate")} className="text-xs font-medium text-ink-2 hover:text-ink">
                         時給{sortIcon("rate")}
                       </button>
                     </th>
                     <th className="text-right px-4 py-3 whitespace-nowrap">
-                      <button onClick={() => handleProjectSort("duration")} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                      <button onClick={() => handleProjectSort("duration")} className="text-xs font-medium text-ink-2 hover:text-ink">
                         作業時間{sortIcon("duration")}
                       </button>
                     </th>
@@ -328,7 +328,7 @@ export default function ProjectManager({
                     const isCompleted = !!p.completedAt;
                     return (
                       <Fragment key={p.id}>
-                        <tr className={`border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${isCompleted ? "opacity-50" : ""}`}
+                        <tr className={`border-b border-line-2 cursor-pointer hover:bg-tint transition-colors ${isCompleted ? "opacity-50" : ""}`}
                           onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
                           <td className="px-4 py-3 relative">
                             <button
@@ -339,7 +339,7 @@ export default function ProjectManager({
                                 setCompletingProjectId(completingProjectId === p.id ? null : p.id);
                               }}
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                isCompleted ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-gray-400"
+                                isCompleted ? "bg-emerald-500 border-emerald-500" : "border-line hover:border-accent"
                               }`}
                               title={isCompleted ? "完了を解除" : "完了にする"}
                             >
@@ -347,15 +347,15 @@ export default function ProjectManager({
                             </button>
                             {completingProjectId === p.id && (
                               <div onClick={(e) => e.stopPropagation()}
-                                className="absolute left-0 top-8 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-56 space-y-2">
-                                <label className="text-xs text-gray-400 block">完了日</label>
+                                className="absolute left-0 top-8 z-20 bg-white border border-line rounded-xl shadow-lg p-3 w-56 space-y-2">
+                                <label className="text-xs text-ink-3 block">完了日</label>
                                 <input type="date" value={completeDate} onChange={(e) => setCompleteDate(e.target.value)}
-                                  className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-gray-400" />
+                                  className="w-full border border-line rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-accent" />
                                 <div className="flex gap-2">
                                   <button onClick={() => setCompletingProjectId(null)}
-                                    className="flex-1 border border-gray-200 text-gray-500 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                                    className="flex-1 border border-line text-ink-2 text-xs py-1.5 rounded-lg hover:bg-tint transition-colors">キャンセル</button>
                                   <button onClick={() => { onToggleProjectComplete(p.id, completeDate); setCompletingProjectId(null); }}
-                                    className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-xs py-1.5 rounded-lg transition-colors">完了にする</button>
+                                    className="flex-1 bg-accent-strong hover:bg-accent-deep text-white text-xs py-1.5 rounded-lg transition-colors">完了にする</button>
                                 </div>
                               </div>
                             )}
@@ -363,18 +363,18 @@ export default function ProjectManager({
                           <td className="px-2 py-3">
                             <div className="flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                              <span className={`text-sm text-gray-800 whitespace-nowrap ${isCompleted ? "line-through" : ""}`}>{p.name}</span>
+                              <span className={`text-sm text-ink whitespace-nowrap ${isCompleted ? "line-through" : ""}`}>{p.name}</span>
                             </div>
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-nowrap">{client?.name ?? "—"}</td>
-                          <td className="px-2 py-3 text-right text-xs text-gray-600 whitespace-nowrap">
+                          <td className="px-2 py-3 text-xs text-ink-2 whitespace-nowrap">{client?.name ?? "—"}</td>
+                          <td className="px-2 py-3 text-right text-xs text-ink-2 whitespace-nowrap">
                             ¥{p.contractAmount.toLocaleString()}
-                            <span className="text-gray-300 ml-1">{p.taxIncluded ? "込" : "抜"}</span>
+                            <span className="text-ink-3 ml-1">{p.taxIncluded ? "込" : "抜"}</span>
                           </td>
                           <td className="px-2 py-3 text-right text-xs whitespace-nowrap">
-                            {totalSeconds > 0 ? <span className="text-gray-700">¥{Math.round(effectiveRate).toLocaleString()}</span> : <span className="text-gray-300">—</span>}
+                            {totalSeconds > 0 ? <span className="text-ink-2">¥{Math.round(effectiveRate).toLocaleString()}</span> : <span className="text-ink-3">—</span>}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-mono text-gray-500 whitespace-nowrap">
+                          <td className="px-4 py-3 text-right text-xs font-mono text-ink-2 whitespace-nowrap">
                             {totalSeconds > 0 ? formatDuration(totalSeconds) : "—"}
                           </td>
                         </tr>
@@ -382,21 +382,21 @@ export default function ProjectManager({
                           const taskRows = getProjectTaskBreakdown(p.id);
                           return (
                             <tr>
-                              <td colSpan={6} className="border-b border-gray-100 bg-gray-50 px-6 py-4 space-y-3">
-                                <div className="text-xs text-gray-500 space-y-0.5">
+                              <td colSpan={6} className="border-b border-line-2 bg-tint px-6 py-4 space-y-3">
+                                <div className="text-xs text-ink-2 space-y-0.5">
                                   <div>税込金額：¥{Math.round(calcAmountIncludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
                                   <div>税抜金額：¥{Math.round(calcAmountExcludingTax(p.contractAmount, p.taxIncluded)).toLocaleString()}</div>
                                 </div>
                                 {taskRows.length > 0 && (
                                   <div className="space-y-2">
-                                    <p className="text-xs text-gray-400 uppercase tracking-wider">タスク別作業時間</p>
+                                    <p className="text-xs text-ink-3 uppercase tracking-wider">タスク別作業時間</p>
                                     {taskRows.map((t) => (
                                       <div key={t.taskName}>
                                         <div className="flex justify-between items-center mb-1">
-                                          <span className="text-xs text-gray-600">{t.taskName}</span>
-                                          <span className="text-xs font-mono text-gray-500">{formatDuration(t.seconds)}</span>
+                                          <span className="text-xs text-ink-2">{t.taskName}</span>
+                                          <span className="text-xs font-mono text-ink-2">{formatDuration(t.seconds)}</span>
                                         </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-1">
+                                        <div className="w-full bg-line rounded-full h-1">
                                           <div className="h-1 rounded-full" style={{
                                             backgroundColor: p.color, opacity: 0.6,
                                             width: totalSeconds > 0 ? `${(t.seconds / totalSeconds) * 100}%` : "0%",
@@ -407,8 +407,8 @@ export default function ProjectManager({
                                   </div>
                                 )}
                                 <div className="flex gap-4 pt-1">
-                                  <button onClick={() => openEditProject(p)} className="text-xs text-gray-500 hover:text-gray-800 transition-colors">案件を編集</button>
-                                  <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                                  <button onClick={() => openEditProject(p)} className="text-xs text-ink-2 hover:text-ink transition-colors">案件を編集</button>
+                                  <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-700 hover:text-red-800 transition-colors">削除</button>
                                 </div>
                               </td>
                             </tr>
@@ -421,9 +421,9 @@ export default function ProjectManager({
 
                 return (
                   <>
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+                    <div className="bg-white rounded-2xl border border-line-2 overflow-x-auto">
                       {activeRows.length === 0 ? (
-                        <p className="px-6 py-8 text-sm text-gray-400 text-center">進行中の案件がありません</p>
+                        <p className="px-6 py-8 text-sm text-ink-3 text-center">進行中の案件がありません</p>
                       ) : (
                         <table className="w-full text-sm">
                           <thead>{headerRow}</thead>
@@ -433,11 +433,11 @@ export default function ProjectManager({
                     </div>
                     {completedRows.length > 0 && (
                       <div>
-                        <button onClick={() => setShowCompleted(!showCompleted)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors mb-2">
+                        <button onClick={() => setShowCompleted(!showCompleted)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors mb-2">
                           完了した案件（{completedRows.length}件）{showCompleted ? "を隠す" : "を表示"}
                         </button>
                         {showCompleted && (
-                          <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+                          <div className="bg-white rounded-2xl border border-line-2 overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead>{headerRow}</thead>
                               <tbody>{renderRows(completedRows)}</tbody>
@@ -458,15 +458,15 @@ export default function ProjectManager({
       {section === "tasks" && (
         <>
           {/* タスク一覧 */}
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">タスク一覧</span>
-              <span className="text-xs text-gray-300">{tasks.length}件</span>
+          <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+            <div className="px-4 py-3 border-b border-line-2 flex items-center justify-between">
+              <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">タスク一覧</span>
+              <span className="text-xs text-ink-3">{tasks.length}件</span>
             </div>
             {tasks.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">タスクがありません</p>
+              <p className="px-4 py-6 text-sm text-ink-3 text-center">タスクがありません</p>
             ) : (
-              <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+              <div className="divide-y divide-line-2 max-h-64 overflow-y-auto">
                 {tasks.map((t) => {
                   const sec = getTaskTotalSeconds(t.id);
                   const inGroups = taskGroups.filter((g) => g.taskIds.includes(t.id));
@@ -480,27 +480,27 @@ export default function ProjectManager({
                             onChange={(e) => setRenameTaskValue(e.target.value)}
                             onKeyDown={onEnterKey(saveRenameTask)}
                             autoFocus
-                            className="flex-1 border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-gray-500"
+                            className="flex-1 border border-line rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-ink-3"
                           />
-                          <button onClick={saveRenameTask} disabled={!renameTaskValue.trim()} className="text-xs text-white bg-gray-900 disabled:opacity-30 px-3 rounded-lg">保存</button>
-                          <button onClick={() => setRenamingTaskId(null)} className="text-xs text-gray-400 px-2">✕</button>
+                          <button onClick={saveRenameTask} disabled={!renameTaskValue.trim()} className="text-xs text-white bg-accent-strong disabled:opacity-30 px-3 rounded-lg">保存</button>
+                          <button onClick={() => setRenamingTaskId(null)} className="text-xs text-ink-3 px-2">✕</button>
                         </div>
                       ) : (
                         <>
                           <div className="min-w-0">
-                            <span className="text-sm text-gray-700">{t.name}</span>
+                            <span className="text-sm text-ink-2">{t.name}</span>
                             {inGroups.length > 0 && (
                               <div className="flex gap-1 mt-0.5 flex-wrap">
                                 {inGroups.map((g) => (
-                                  <span key={g.id} className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">{g.name}</span>
+                                  <span key={g.id} className="text-xs bg-line-2 text-ink-3 px-2 py-0.5 rounded-full">{g.name}</span>
                                 ))}
                               </div>
                             )}
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            {sec > 0 && <span className="text-xs font-mono text-gray-400">{formatDuration(sec)}</span>}
-                            <button onClick={() => startRenameTask(t)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
-                            <button onClick={() => onDeleteTask(t.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                            {sec > 0 && <span className="text-xs font-mono text-ink-3">{formatDuration(sec)}</span>}
+                            <button onClick={() => startRenameTask(t)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
+                            <button onClick={() => onDeleteTask(t.id)} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
                           </div>
                         </>
                       )}
@@ -510,13 +510,13 @@ export default function ProjectManager({
               </div>
             )}
             {/* タスク追加 */}
-            <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
+            <div className="border-t border-line-2 px-4 py-3 flex gap-2">
               <input value={newTaskName} onChange={(e) => setNewTaskName(e.target.value)}
                 onKeyDown={onEnterKey(handleAddTask)}
                 placeholder="新しいタスクを追加"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+                className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
               <button onClick={handleAddTask} disabled={!newTaskName.trim()}
-                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-lg transition-colors">
+                className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium px-4 rounded-lg transition-colors">
                 追加
               </button>
             </div>
@@ -524,26 +524,26 @@ export default function ProjectManager({
 
           {/* グループ */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">タスクグループ</span>
+            <span className="text-sm font-medium text-ink-2">タスクグループ</span>
             {addingGroup ? (
               <div className="flex gap-2">
                 <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)}
                   onKeyDown={onEnterKey(handleAddGroup)}
                   placeholder="グループ名" autoFocus
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-400" />
+                  className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accent" />
                 <button onClick={handleAddGroup} disabled={!newGroupName.trim()}
-                  className="bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg disabled:opacity-30">追加</button>
-                <button onClick={() => { setAddingGroup(false); setNewGroupName(""); }} className="text-gray-400 text-sm px-2">✕</button>
+                  className="bg-accent-strong text-white text-sm px-3 py-1.5 rounded-lg disabled:opacity-30">追加</button>
+                <button onClick={() => { setAddingGroup(false); setNewGroupName(""); }} className="text-ink-3 text-sm px-2">✕</button>
               </div>
             ) : (
-              <button onClick={() => setAddingGroup(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">+ グループを追加</button>
+              <button onClick={() => setAddingGroup(true)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">+ グループを追加</button>
             )}
           </div>
 
           {taskGroups.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">グループがありません</p>
-              <p className="text-xs text-gray-300 mt-1">グループを作ってタスクをまとめると、案件登録時に使えます</p>
+            <div className="bg-white rounded-2xl p-6 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">グループがありません</p>
+              <p className="text-xs text-ink-3 mt-1">グループを作ってタスクをまとめると、案件登録時に使えます</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -554,7 +554,7 @@ export default function ProjectManager({
                 const availableTasks = tasks.filter((t) => !taskIds.includes(t.id));
                 const isRenamingGroup = renamingGroupId === g.id;
                 return (
-                  <div key={g.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div key={g.id} className="bg-white rounded-2xl border border-line-2 overflow-hidden">
                     {isRenamingGroup ? (
                       <div className="flex items-center gap-2 px-4 py-3">
                         <input
@@ -562,44 +562,44 @@ export default function ProjectManager({
                           onChange={(e) => setRenameGroupValue(e.target.value)}
                           onKeyDown={onEnterKey(saveRenameGroup)}
                           autoFocus
-                          className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-gray-500"
+                          className="flex-1 border border-line rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-ink-3"
                         />
-                        <button onClick={saveRenameGroup} disabled={!renameGroupValue.trim()} className="text-xs text-white bg-gray-900 disabled:opacity-30 px-3 py-1.5 rounded-lg">保存</button>
-                        <button onClick={() => setRenamingGroupId(null)} className="text-xs text-gray-400 px-2">✕</button>
+                        <button onClick={saveRenameGroup} disabled={!renameGroupValue.trim()} className="text-xs text-white bg-accent-strong disabled:opacity-30 px-3 py-1.5 rounded-lg">保存</button>
+                        <button onClick={() => setRenamingGroupId(null)} className="text-xs text-ink-3 px-2">✕</button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
+                      <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-tint"
                         onClick={() => setExpandedGroup(isExpanded ? null : g.id)}>
                         <div>
-                          <span className="text-sm font-medium text-gray-800">{g.name}</span>
-                          <span className="ml-2 text-xs text-gray-400">
+                          <span className="text-sm font-medium text-ink">{g.name}</span>
+                          <span className="ml-2 text-xs text-ink-3">
                             {groupTasks.length > 0 ? groupTasks.map((t) => t.name).join("・") : "タスクなし"}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <button onClick={(e) => { e.stopPropagation(); startRenameGroup(g); }} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
-                          <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
-                          <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                          <button onClick={(e) => { e.stopPropagation(); startRenameGroup(g); }} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
+                          <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
+                          <span className="text-ink-3 text-xs">{isExpanded ? "▲" : "▼"}</span>
                         </div>
                       </div>
                     )}
                     {isExpanded && (
-                      <div className="border-t border-gray-100 px-4 py-3 space-y-2 bg-gray-50">
+                      <div className="border-t border-line-2 px-4 py-3 space-y-2 bg-tint">
                         {groupTasks.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {groupTasks.map((t) => (
-                              <span key={t.id} className="flex items-center gap-1 bg-white border border-gray-200 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                              <span key={t.id} className="flex items-center gap-1 bg-white border border-line text-ink-2 text-xs px-3 py-1.5 rounded-full">
                                 {t.name}
-                                <button onClick={() => onRemoveTaskFromGroup(g.id, t.id)} className="text-gray-300 hover:text-red-400 ml-1">✕</button>
+                                <button onClick={() => onRemoveTaskFromGroup(g.id, t.id)} className="text-ink-3 hover:text-red-700 ml-1">✕</button>
                               </span>
                             ))}
                           </div>
                         )}
                         {addingToGroup === g.id ? (
                           <div className="space-y-2">
-                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-white border border-gray-200 rounded-lg">
+                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-white border border-line rounded-lg">
                               {availableTasks.length === 0 ? (
-                                <span className="text-xs text-gray-400">追加できるタスクがありません</span>
+                                <span className="text-xs text-ink-3">追加できるタスクがありません</span>
                               ) : (
                                 availableTasks.map((t) => {
                                   const checked = pickTaskIds.includes(t.id);
@@ -610,8 +610,8 @@ export default function ProjectManager({
                                       onClick={() => togglePickTask(t.id)}
                                       className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                                         checked
-                                          ? "bg-gray-900 text-white border-gray-900"
-                                          : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                                          ? "bg-accent-strong text-white border-accent-strong"
+                                          : "bg-tint text-ink-2 border-line hover:border-accent"
                                       }`}
                                     >
                                       {checked ? "✓ " : ""}{t.name}
@@ -622,9 +622,9 @@ export default function ProjectManager({
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => { setAddingToGroup(null); setPickTaskIds([]); }}
-                                className="flex-1 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-50 transition-colors">キャンセル</button>
+                                className="flex-1 border border-line text-ink-2 text-xs py-2 rounded-lg hover:bg-tint transition-colors">キャンセル</button>
                               <button onClick={() => handleAddToGroup(g.id)} disabled={pickTaskIds.length === 0}
-                                className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">
+                                className="flex-1 bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-xs py-2 rounded-lg transition-colors">
                                 {pickTaskIds.length > 0 ? `${pickTaskIds.length}件を追加` : "追加"}
                               </button>
                             </div>
@@ -632,7 +632,7 @@ export default function ProjectManager({
                         ) : (
                           availableTasks.length > 0 && (
                             <button onClick={() => { setAddingToGroup(g.id); setPickTaskIds([]); }}
-                              className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                              className="text-xs text-ink-3 hover:text-ink-2 transition-colors">
                               + タスクを追加
                             </button>
                           )
@@ -649,15 +649,15 @@ export default function ProjectManager({
 
       {/* ===== クライアントセクション ===== */}
       {section === "clients" && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">クライアント一覧</span>
-            <span className="text-xs text-gray-300">{clients.length}件</span>
+        <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+          <div className="px-4 py-3 border-b border-line-2 flex items-center justify-between">
+            <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">クライアント一覧</span>
+            <span className="text-xs text-ink-3">{clients.length}件</span>
           </div>
           {clients.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">クライアントがありません</p>
+            <p className="px-4 py-6 text-sm text-ink-3 text-center">クライアントがありません</p>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-line-2">
               {clients.map((c) => {
                 const isRenaming = renamingClientId === c.id;
                 const projectCount = projects.filter((p) => p.clientId === c.id).length;
@@ -670,20 +670,20 @@ export default function ProjectManager({
                           onChange={(e) => setRenameClientValue(e.target.value)}
                           onKeyDown={onEnterKey(saveRenameClient)}
                           autoFocus
-                          className="flex-1 border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-gray-500"
+                          className="flex-1 border border-line rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-ink-3"
                         />
-                        <button onClick={saveRenameClient} disabled={!renameClientValue.trim()} className="text-xs text-white bg-gray-900 disabled:opacity-30 px-3 rounded-lg">保存</button>
-                        <button onClick={() => setRenamingClientId(null)} className="text-xs text-gray-400 px-2">✕</button>
+                        <button onClick={saveRenameClient} disabled={!renameClientValue.trim()} className="text-xs text-white bg-accent-strong disabled:opacity-30 px-3 rounded-lg">保存</button>
+                        <button onClick={() => setRenamingClientId(null)} className="text-xs text-ink-3 px-2">✕</button>
                       </div>
                     ) : (
                       <>
                         <div>
-                          <span className="text-sm text-gray-700">{c.name}</span>
-                          {projectCount > 0 && <span className="ml-2 text-xs text-gray-300">案件{projectCount}件</span>}
+                          <span className="text-sm text-ink-2">{c.name}</span>
+                          {projectCount > 0 && <span className="ml-2 text-xs text-ink-3">案件{projectCount}件</span>}
                         </div>
                         <div className="flex items-center gap-3">
-                          <button onClick={() => startRenameClient(c)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">編集</button>
-                          <button onClick={() => onDeleteClient(c.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">削除</button>
+                          <button onClick={() => startRenameClient(c)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
+                          <button onClick={() => onDeleteClient(c.id)} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
                         </div>
                       </>
                     )}
@@ -692,13 +692,13 @@ export default function ProjectManager({
               })}
             </div>
           )}
-          <div className="border-t border-gray-100 px-4 py-3 flex gap-2">
+          <div className="border-t border-line-2 px-4 py-3 flex gap-2">
             <input value={newClientName} onChange={(e) => setNewClientName(e.target.value)}
               onKeyDown={onEnterKey(handleAddClient)}
               placeholder="新しいクライアントを追加"
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+              className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
             <button onClick={handleAddClient} disabled={!newClientName.trim()}
-              className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-lg transition-colors">
+              className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium px-4 rounded-lg transition-colors">
               追加
             </button>
           </div>
@@ -712,17 +712,17 @@ export default function ProjectManager({
 
             {modal === "project" && (
               <>
-                <h3 className="text-base font-semibold text-gray-900">案件を追加</h3>
+                <h3 className="text-base font-semibold text-ink">案件を追加</h3>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="案件名" autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                  className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                 <div className="flex gap-2">
                   <input value={rate} onChange={(e) => setRate(e.target.value)} placeholder="契約金額（円）" type="number"
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-                  <div className="flex bg-gray-100 rounded-xl p-1">
+                    className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
+                  <div className="flex bg-line-2 rounded-xl p-1">
                     <button type="button" onClick={() => setTaxIncluded(true)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税込</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
                     <button type="button" onClick={() => setTaxIncluded(false)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税抜</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
                   </div>
                 </div>
                 {addingClientInline ? (
@@ -730,30 +730,30 @@ export default function ProjectManager({
                     <input value={inlineClientName} onChange={(e) => setInlineClientName(e.target.value)}
                       onKeyDown={onEnterKey(handleAddClientInline)}
                       placeholder="クライアント名" autoFocus
-                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                      className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                     <button onClick={handleAddClientInline} disabled={!inlineClientName.trim()}
-                      className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
-                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-gray-400 text-sm px-2">✕</button>
+                      className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
+                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-ink-3 text-sm px-2">✕</button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
                     <select value={clientId} onChange={(e) => setClientId(e.target.value)}
-                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
+                      className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent">
                       <option value="">クライアントなし</option>
                       {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     <button type="button" onClick={() => setAddingClientInline(true)}
-                      className="border border-gray-200 hover:bg-gray-50 text-gray-500 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
+                      className="border border-line hover:bg-tint text-ink-2 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
                       + 新規
                     </button>
                   </div>
                 )}
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-500">カラー</label>
+                  <label className="text-sm text-ink-2">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-500">関連タスク（任意）</label>
+                  <label className="text-sm text-ink-2">関連タスク（任意）</label>
                   {taskGroups.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {taskGroups.map((g) => {
@@ -761,7 +761,7 @@ export default function ProjectManager({
                         return (
                           <button key={g.id} type="button" onClick={() => toggleProjectTaskGroup(g)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              active ? "bg-indigo-500 text-white border-indigo-500" : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                              active ? "bg-accent-strong text-white border-accent-strong" : "bg-tint text-ink-2 border-line hover:border-accent"
                             }`}>
                             {active ? "✓ " : ""}{g.name}
                           </button>
@@ -770,13 +770,13 @@ export default function ProjectManager({
                     </div>
                   )}
                   {tasks.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-tint border border-line rounded-lg max-h-32 overflow-y-auto">
                       {tasks.map((t) => {
                         const checked = projectTaskIds.includes(t.id);
                         return (
                           <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              checked ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-white text-ink-2 border-line hover:border-accent"
                             }`}>
                             {checked ? "✓ " : ""}{t.name}
                           </button>
@@ -789,37 +789,37 @@ export default function ProjectManager({
                       <input value={projectNewTaskName} onChange={(e) => setProjectNewTaskName(e.target.value)}
                         onKeyDown={onEnterKey(handleAddProjectTaskInline)}
                         placeholder="新規タスク名" autoFocus
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+                        className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
                       <button onClick={handleAddProjectTaskInline} disabled={!projectNewTaskName.trim()}
-                        className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
-                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                        className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
+                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-ink-3 text-xs px-2">✕</button>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">
                       + 新規タスクを追加
                     </button>
                   )}
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
-                  <button onClick={handleAddProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">追加</button>
+                  <button onClick={closeModal} className="flex-1 border border-line text-ink-2 text-sm font-medium py-3 rounded-xl hover:bg-tint transition-colors">キャンセル</button>
+                  <button onClick={handleAddProject} disabled={!name.trim() || !rate} className="flex-1 bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">追加</button>
                 </div>
               </>
             )}
 
             {modal === "editProject" && (
               <>
-                <h3 className="text-base font-semibold text-gray-900">案件を編集</h3>
+                <h3 className="text-base font-semibold text-ink">案件を編集</h3>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="案件名" autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                  className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                 <div className="flex gap-2">
                   <input value={rate} onChange={(e) => setRate(e.target.value)} placeholder="契約金額（円）" type="number"
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-                  <div className="flex bg-gray-100 rounded-xl p-1">
+                    className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
+                  <div className="flex bg-line-2 rounded-xl p-1">
                     <button type="button" onClick={() => setTaxIncluded(true)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税込</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
                     <button type="button" onClick={() => setTaxIncluded(false)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400"}`}>税抜</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
                   </div>
                 </div>
                 {addingClientInline ? (
@@ -827,30 +827,30 @@ export default function ProjectManager({
                     <input value={inlineClientName} onChange={(e) => setInlineClientName(e.target.value)}
                       onKeyDown={onEnterKey(handleAddClientInline)}
                       placeholder="クライアント名" autoFocus
-                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
+                      className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                     <button onClick={handleAddClientInline} disabled={!inlineClientName.trim()}
-                      className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
-                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-gray-400 text-sm px-2">✕</button>
+                      className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium px-4 rounded-xl transition-colors">追加</button>
+                    <button onClick={() => { setAddingClientInline(false); setInlineClientName(""); }} className="text-ink-3 text-sm px-2">✕</button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
                     <select value={clientId} onChange={(e) => setClientId(e.target.value)}
-                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400">
+                      className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent">
                       <option value="">クライアントなし</option>
                       {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     <button type="button" onClick={() => setAddingClientInline(true)}
-                      className="border border-gray-200 hover:bg-gray-50 text-gray-500 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
+                      className="border border-line hover:bg-tint text-ink-2 text-sm px-4 rounded-xl transition-colors whitespace-nowrap">
                       + 新規
                     </button>
                   </div>
                 )}
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-500">カラー</label>
+                  <label className="text-sm text-ink-2">カラー</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-500">関連タスク（任意）</label>
+                  <label className="text-sm text-ink-2">関連タスク（任意）</label>
                   {taskGroups.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {taskGroups.map((g) => {
@@ -858,7 +858,7 @@ export default function ProjectManager({
                         return (
                           <button key={g.id} type="button" onClick={() => toggleProjectTaskGroup(g)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              active ? "bg-indigo-500 text-white border-indigo-500" : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                              active ? "bg-accent-strong text-white border-accent-strong" : "bg-tint text-ink-2 border-line hover:border-accent"
                             }`}>
                             {active ? "✓ " : ""}{g.name}
                           </button>
@@ -867,13 +867,13 @@ export default function ProjectManager({
                     </div>
                   )}
                   {tasks.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-tint border border-line rounded-lg max-h-32 overflow-y-auto">
                       {tasks.map((t) => {
                         const checked = projectTaskIds.includes(t.id);
                         return (
                           <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              checked ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-white text-ink-2 border-line hover:border-accent"
                             }`}>
                             {checked ? "✓ " : ""}{t.name}
                           </button>
@@ -886,20 +886,20 @@ export default function ProjectManager({
                       <input value={projectNewTaskName} onChange={(e) => setProjectNewTaskName(e.target.value)}
                         onKeyDown={onEnterKey(handleAddProjectTaskInline)}
                         placeholder="新規タスク名" autoFocus
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400" />
+                        className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
                       <button onClick={handleAddProjectTaskInline} disabled={!projectNewTaskName.trim()}
-                        className="bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
-                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-gray-400 text-xs px-2">✕</button>
+                        className="bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-xs px-3 rounded-lg transition-colors">追加</button>
+                      <button onClick={() => { setAddingProjectTask(false); setProjectNewTaskName(""); }} className="text-ink-3 text-xs px-2">✕</button>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                    <button type="button" onClick={() => setAddingProjectTask(true)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">
                       + 新規タスクを追加
                     </button>
                   )}
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <button onClick={closeModal} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors">キャンセル</button>
-                  <button onClick={handleUpdateProject} disabled={!name.trim() || !rate} className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
+                  <button onClick={closeModal} className="flex-1 border border-line text-ink-2 text-sm font-medium py-3 rounded-xl hover:bg-tint transition-colors">キャンセル</button>
+                  <button onClick={handleUpdateProject} disabled={!name.trim() || !rate} className="flex-1 bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
                 </div>
               </>
             )}

@@ -108,11 +108,11 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   const maxRate = projectSummaries[0]?.effectiveRate ?? 0;
 
   function rateColor(rate: number, max: number) {
-    if (max === 0) return "text-gray-400";
+    if (max === 0) return "text-ink-3";
     const ratio = rate / max;
-    if (ratio >= 0.8) return "text-emerald-600";
-    if (ratio >= 0.5) return "text-amber-500";
-    return "text-red-400";
+    if (ratio >= 0.8) return "text-emerald-700";
+    if (ratio >= 0.5) return "text-amber-700";
+    return "text-red-700";
   }
 
   const tabs: { key: ReportTab; label: string }[] = [
@@ -124,10 +124,10 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
   return (
     <div className="space-y-4">
       {/* タブ切替 */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-line-2 rounded-xl p-1 w-fit">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setReportTab(t.key)}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-400 hover:text-gray-600"}`}>
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}>
             {t.label}
           </button>
         ))}
@@ -138,18 +138,18 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
         <>
           <div className="flex gap-2">
             <select value={year} onChange={(e) => setYear(Number(e.target.value))}
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400">
+              className="border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-accent">
               {years.map((y) => <option key={y} value={y}>{y}年</option>)}
             </select>
             <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400">
+              className="border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-accent">
               {months.map((m) => <option key={m} value={m}>{m}月</option>)}
             </select>
           </div>
 
           {rows.length === 0 && completedCount === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">この月の記録はありません</p>
+            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">この月の記録はありません</p>
             </div>
           ) : (
             <>
@@ -165,43 +165,43 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
 
               {/* 比率チャート */}
               <div className="grid lg:grid-cols-2 gap-3">
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">案件別の時間比率</h2>
+                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">案件別の時間比率</h2>
                   <DonutChart slices={monthProjectSlices} formatValue={hours} centerLabel="合計" />
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
+                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
                   <DonutChart slices={monthTaskSlices} formatValue={hours} centerLabel="合計" />
                 </div>
               </div>
 
               {/* 案件別（表としても機能する詳細） */}
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">案件別の詳細</h2>
+              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+                <div className="px-6 py-4 border-b border-line-2">
+                  <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">案件別の詳細</h2>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-line-2">
                   {rows.map(([projectId, r], ri) => {
                     const taskRows = Object.values(r.byTask).sort((a, b) => b.seconds - a.seconds);
                     const isExpanded = expandedProject === projectId;
                     const c = rankColor(ri);
                     return (
                       <div key={projectId}>
-                        <div className="px-6 py-4 space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                        <div className="px-6 py-4 space-y-2 cursor-pointer hover:bg-tint transition-colors"
                           onClick={() => setExpandedProject(isExpanded ? null : projectId)}>
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />
-                              <span className="text-sm font-medium text-gray-800 truncate">{r.name}</span>
+                              <span className="text-sm font-medium text-ink truncate">{r.name}</span>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
-                              <span className="text-xs text-gray-400">¥{Math.round(calcAmountIncludingTax(r.contractAmount, r.taxIncluded)).toLocaleString()}</span>
-                              <span className="text-sm font-mono text-gray-500">{formatDuration(r.seconds)}</span>
-                              <span className="text-sm text-gray-700">¥{Math.round(r.effectiveRate).toLocaleString()}/h</span>
-                              <span className="text-gray-300 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                              <span className="text-xs text-ink-3">¥{Math.round(calcAmountIncludingTax(r.contractAmount, r.taxIncluded)).toLocaleString()}</span>
+                              <span className="text-sm font-mono text-ink-2">{formatDuration(r.seconds)}</span>
+                              <span className="text-sm text-ink-2">¥{Math.round(r.effectiveRate).toLocaleString()}/h</span>
+                              <span className="text-ink-3 text-xs">{isExpanded ? "▲" : "▼"}</span>
                             </div>
                           </div>
-                          <div className="w-full bg-gray-100 rounded-full h-1">
+                          <div className="w-full bg-line-2 rounded-full h-1">
                             <div className="h-1 rounded-full" style={{
                               backgroundColor: c,
                               width: totalSeconds > 0 ? `${(r.seconds / totalSeconds) * 100}%` : "0%",
@@ -209,15 +209,15 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                           </div>
                         </div>
                         {isExpanded && taskRows.length > 0 && (
-                          <div className="px-6 pb-4 space-y-2 border-t border-gray-50 bg-gray-50">
-                            <p className="text-xs text-gray-400 pt-3 uppercase tracking-wider">タスク別</p>
+                          <div className="px-6 pb-4 space-y-2 border-t border-line-2 bg-tint">
+                            <p className="text-xs text-ink-3 pt-3 uppercase tracking-wider">タスク別</p>
                             {taskRows.map((t) => (
                               <div key={t.taskName}>
                                 <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs text-gray-600">{t.taskName}</span>
-                                  <span className="text-xs font-mono text-gray-500">{formatDuration(t.seconds)}</span>
+                                  <span className="text-xs text-ink-2">{t.taskName}</span>
+                                  <span className="text-xs font-mono text-ink-2">{formatDuration(t.seconds)}</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1">
+                                <div className="w-full bg-line rounded-full h-1">
                                   <div className="h-1 rounded-full" style={{
                                     backgroundColor: c, opacity: 0.6,
                                     width: r.seconds > 0 ? `${(t.seconds / r.seconds) * 100}%` : "0%",
@@ -241,13 +241,13 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
       {reportTab === "yearly" && (
         <>
           <select value={year} onChange={(e) => setYear(Number(e.target.value))}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400">
+            className="border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-accent">
             {years.map((y) => <option key={y} value={y}>{y}年</option>)}
           </select>
 
           {yearTotalSeconds === 0 && yearCompletedCount === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">この年の記録はありません</p>
+            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">この年の記録はありません</p>
             </div>
           ) : (
             <>
@@ -258,42 +258,42 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                 <StatTile label="月平均" value={activeMonths > 0 ? hours(yearTotalSeconds / activeMonths) : "—"} sub="稼働月あたり" />
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">月別の作業時間</h2>
+              <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">月別の作業時間</h2>
                 <MonthlyBars data={monthlyBreakdown} formatValue={formatDuration} />
               </div>
 
               <div className="grid lg:grid-cols-2 gap-3">
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">クライアント別の時間比率</h2>
+                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">クライアント別の時間比率</h2>
                   <DonutChart slices={yearClientSlices} formatValue={hours} centerLabel="年間" />
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
+                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
                   <DonutChart slices={yearTaskSlices} formatValue={hours} centerLabel="年間" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">月別の詳細</h2>
+              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+                <div className="px-6 py-4 border-b border-line-2">
+                  <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">月別の詳細</h2>
                 </div>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-6 py-2.5 text-xs font-medium text-gray-500">月</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500">作業時間</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500">完了</th>
-                      <th className="text-right px-6 py-2.5 text-xs font-medium text-gray-500">確定金額</th>
+                    <tr className="border-b border-line-2 bg-tint">
+                      <th className="text-left px-6 py-2.5 text-xs font-medium text-ink-2">月</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-medium text-ink-2">作業時間</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-medium text-ink-2">完了</th>
+                      <th className="text-right px-6 py-2.5 text-xs font-medium text-ink-2">確定金額</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-line-2">
                     {monthlyBreakdown.map((m) => (
                       <tr key={m.month} className={m.seconds === 0 && m.count === 0 ? "opacity-40" : ""}>
-                        <td className="px-6 py-2.5 text-gray-700">{m.month}月</td>
-                        <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-600">{m.seconds > 0 ? formatDuration(m.seconds) : "—"}</td>
-                        <td className="px-4 py-2.5 text-right text-xs text-gray-500">{m.count > 0 ? `${m.count}件` : "—"}</td>
-                        <td className="px-6 py-2.5 text-right text-xs text-gray-700">{m.amount > 0 ? `¥${Math.round(m.amount).toLocaleString()}` : "—"}</td>
+                        <td className="px-6 py-2.5 text-ink-2">{m.month}月</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-ink-2">{m.seconds > 0 ? formatDuration(m.seconds) : "—"}</td>
+                        <td className="px-4 py-2.5 text-right text-xs text-ink-2">{m.count > 0 ? `${m.count}件` : "—"}</td>
+                        <td className="px-6 py-2.5 text-right text-xs text-ink-2">{m.amount > 0 ? `¥${Math.round(m.amount).toLocaleString()}` : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -308,34 +308,34 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
       {reportTab === "projects" && (
         <>
           {projectSummaries.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
-              <p className="text-sm text-gray-400">記録がありません</p>
+            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">記録がありません</p>
             </div>
           ) : (
             <>
-              <p className="text-xs text-gray-400">時給の高い順。時給は案件の全期間合計時間・税込金額で計算しています。</p>
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="divide-y divide-gray-100">
+              <p className="text-xs text-ink-3">時給の高い順。時給は案件の全期間合計時間・税込金額で計算しています。</p>
+              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+                <div className="divide-y divide-line-2">
                   {projectSummaries.map((p, i) => {
                     const taskRows = Object.values(p.byTask).sort((a, b) => b.seconds - a.seconds);
                     const isExpanded = expandedProject === p.id;
                     return (
                       <div key={p.id}>
-                        <div className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                        <div className="px-6 py-4 cursor-pointer hover:bg-tint transition-colors"
                           onClick={() => setExpandedProject(isExpanded ? null : p.id)}>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs font-mono text-gray-300 w-4">{i + 1}</span>
+                            <span className="text-xs font-mono text-ink-3 w-4">{i + 1}</span>
                             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                            <span className="text-sm font-medium text-gray-800 flex-1 truncate">{p.name}</span>
+                            <span className="text-sm font-medium text-ink flex-1 truncate">{p.name}</span>
                             <div className="text-right flex-shrink-0">
                               <p className={`text-base font-mono font-medium ${rateColor(p.effectiveRate, maxRate)}`}>
                                 ¥{Math.round(p.effectiveRate).toLocaleString()}<span className="text-xs font-normal">/h</span>
                               </p>
-                              <p className="text-xs text-gray-400">{formatDuration(p.totalSeconds)} · ¥{Math.round(p.includingTaxAmount).toLocaleString()}</p>
+                              <p className="text-xs text-ink-3">{formatDuration(p.totalSeconds)} · ¥{Math.round(p.includingTaxAmount).toLocaleString()}</p>
                             </div>
-                            <span className="text-gray-300 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
+                            <span className="text-ink-3 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
                           </div>
-                          <div className="mt-2 ml-7 w-full bg-gray-100 rounded-full h-1.5">
+                          <div className="mt-2 ml-7 w-full bg-line-2 rounded-full h-1.5">
                             <div className="h-1.5 rounded-full transition-all" style={{
                               backgroundColor: p.color,
                               width: maxRate > 0 ? `${(p.effectiveRate / maxRate) * 100}%` : "0%",
@@ -343,15 +343,15 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries }
                           </div>
                         </div>
                         {isExpanded && taskRows.length > 0 && (
-                          <div className="px-6 pb-4 border-t border-gray-50 bg-gray-50 space-y-2">
-                            <p className="text-xs text-gray-400 pt-3 uppercase tracking-wider">タスク別作業時間</p>
+                          <div className="px-6 pb-4 border-t border-line-2 bg-tint space-y-2">
+                            <p className="text-xs text-ink-3 pt-3 uppercase tracking-wider">タスク別作業時間</p>
                             {taskRows.map((t) => (
                               <div key={t.taskName}>
                                 <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs text-gray-600">{t.taskName}</span>
-                                  <span className="text-xs font-mono text-gray-500">{formatDuration(t.seconds)}</span>
+                                  <span className="text-xs text-ink-2">{t.taskName}</span>
+                                  <span className="text-xs font-mono text-ink-2">{formatDuration(t.seconds)}</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1">
+                                <div className="w-full bg-line rounded-full h-1">
                                   <div className="h-1 rounded-full" style={{
                                     backgroundColor: p.color, opacity: 0.6,
                                     width: p.totalSeconds > 0 ? `${(t.seconds / p.totalSeconds) * 100}%` : "0%",

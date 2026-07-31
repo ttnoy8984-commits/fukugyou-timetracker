@@ -101,11 +101,11 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   return (
     <div className="space-y-4">
       {/* モード切替 */}
-      <div className="flex bg-white border border-gray-100 rounded-xl p-1">
+      <div className="flex bg-white border border-line-2 rounded-xl p-1">
         <button
           onClick={() => setMode("timer")}
           className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-            mode === "timer" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"
+            mode === "timer" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"
           }`}
         >
           タイマー
@@ -113,7 +113,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
         <button
           onClick={() => setMode("manual")}
           className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-            mode === "manual" ? "bg-gray-900 text-white font-medium" : "text-gray-400 hover:text-gray-600"
+            mode === "manual" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"
           }`}
         >
           手入力
@@ -121,34 +121,34 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
       </div>
 
       {mode === "timer" ? (
-        <div className="bg-white rounded-2xl p-8 space-y-4 border border-gray-100">
+        <div className="bg-white rounded-2xl p-8 space-y-4 border border-line-2">
           {activeEntry ? (
             <>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject?.color ?? "#d1d5db" }} />
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-ink-2">
                     {activeProject ? `${activeProject.name} / ${activeTask?.name ?? "—"}` : "案件未設定（停止後に設定できます）"}
                   </span>
                 </div>
-                {activeEntry.note && <p className="text-sm text-gray-400 pl-4">{activeEntry.note}</p>}
+                {activeEntry.note && <p className="text-sm text-ink-3 pl-4">{activeEntry.note}</p>}
               </div>
               <div className="text-center">
-                <div className={`text-6xl font-mono font-light tracking-tight ${isPaused ? "text-amber-400" : "text-gray-900"}`}>
+                <div className={`text-6xl font-mono font-light tracking-tight ${isPaused ? "text-amber-700" : "text-ink"}`}>
                   {formatDuration(elapsed)}
                 </div>
-                {isPaused && <p className="text-xs text-amber-400 mt-1">一時停止中</p>}
+                {isPaused && <p className="text-xs text-amber-700 mt-1">一時停止中</p>}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={isPaused ? onResume : onPause}
-                  className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium py-3 rounded-xl transition-colors"
+                  className="flex-1 border border-line text-ink-2 hover:bg-tint text-sm font-medium py-3 rounded-xl transition-colors"
                 >
                   {isPaused ? "再開" : "一時停止"}
                 </button>
                 <button
                   onClick={handleStop}
-                  className="flex-1 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+                  className="flex-1 bg-accent-strong hover:bg-accent-deep text-white text-sm font-medium py-3 rounded-xl transition-colors"
                 >
                   停止
                 </button>
@@ -156,11 +156,11 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             </>
           ) : (
             <>
-              <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">新しい作業</h2>
+              <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">新しい作業</h2>
               <select
                 value={projectId}
                 onChange={(e) => { setProjectId(e.target.value); setTaskId(""); }}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               >
                 <option value="">案件（後で設定可）</option>
                 {projects.map((p) => (
@@ -170,7 +170,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
               <select
                 value={taskId}
                 onChange={(e) => setTaskId(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               >
                 <option value="">タスク（後で設定可）</option>
                 {filteredTasks.map((t) => (
@@ -181,11 +181,11 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="メモ（任意）"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               />
               <button
                 onClick={handleStart}
-                className="w-full bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+                className="w-full bg-accent-strong hover:bg-accent-deep text-white text-sm font-medium py-3 rounded-xl transition-colors"
               >
                 開始
               </button>
@@ -193,13 +193,13 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-8 space-y-4 border border-gray-100">
-          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">手入力</h2>
+        <div className="bg-white rounded-2xl p-8 space-y-4 border border-line-2">
+          <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">手入力</h2>
 
           <select
             value={mProjectId}
             onChange={(e) => { setMProjectId(e.target.value); setMTaskId(""); }}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
           >
             <option value="">案件を選択</option>
             {projects.map((p) => (
@@ -210,7 +210,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
           <select
             value={mTaskId}
             onChange={(e) => setMTaskId(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
           >
             <option value="">タスク（後で設定可）</option>
             {mFilteredTasks.map((t) => (
@@ -219,40 +219,40 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
           </select>
 
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">日付</label>
+            <label className="text-xs text-ink-3 mb-1 block">日付</label>
             <input
               type="date"
               value={mDate}
               onChange={(e) => setMDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
             />
           </div>
 
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <label className="text-xs text-gray-400 mb-1 block">開始時刻</label>
+              <label className="text-xs text-ink-3 mb-1 block">開始時刻</label>
               <input
                 type="time"
                 value={mStart}
                 onChange={(e) => setMStart(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               />
             </div>
-            <span className="text-gray-400 pb-3">〜</span>
+            <span className="text-ink-3 pb-3">〜</span>
             <div className="flex-1">
-              <label className="text-xs text-gray-400 mb-1 block">終了時刻</label>
+              <label className="text-xs text-ink-3 mb-1 block">終了時刻</label>
               <input
                 type="time"
                 value={mEnd}
                 onChange={(e) => setMEnd(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               />
             </div>
           </div>
 
           {previewDuration && (
-            <div className="text-center text-sm text-gray-500">
-              作業時間：<span className="font-mono font-medium text-gray-800">{previewDuration}</span>
+            <div className="text-center text-sm text-ink-2">
+              作業時間：<span className="font-mono font-medium text-ink">{previewDuration}</span>
             </div>
           )}
 
@@ -260,15 +260,15 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             value={mNote}
             onChange={(e) => setMNote(e.target.value)}
             placeholder="メモ（任意）"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+            className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
           />
 
-          {mError && <p className="text-xs text-red-500">{mError}</p>}
+          {mError && <p className="text-xs text-red-700">{mError}</p>}
 
           <button
             onClick={handleManualAdd}
             disabled={!mDate || !mStart || !mEnd}
-            className="w-full bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+            className="w-full bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
           >
             記録する
           </button>
@@ -276,7 +276,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
       )}
 
       {projects.length === 0 && (
-        <p className="text-center text-sm text-gray-400">まず「案件」タブで案件とタスクを登録してください</p>
+        <p className="text-center text-sm text-ink-3">まず「案件」タブで案件とタスクを登録してください</p>
       )}
 
       {/* 停止後の案件割り当てモーダル */}
@@ -284,13 +284,13 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">作業を記録しました</h3>
-              <p className="text-xs text-gray-400 mt-1">案件とタスクを割り当ててください（後でログから編集もできます）</p>
+              <h3 className="text-base font-semibold text-ink">作業を記録しました</h3>
+              <p className="text-xs text-ink-3 mt-1">案件とタスクを割り当ててください（後でログから編集もできます）</p>
             </div>
             <select
               value={assignProjectId}
               onChange={(e) => { setAssignProjectId(e.target.value); setAssignTaskId(""); }}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
             >
               <option value="">案件を選択</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -298,7 +298,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             <select
               value={assignTaskId}
               onChange={(e) => setAssignTaskId(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
             >
               <option value="">タスクを選択</option>
               {(assignProjectId ? tasksForProject(assignProjectId) : tasks).map((t) => (
@@ -309,19 +309,19 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
               value={assignNote}
               onChange={(e) => setAssignNote(e.target.value)}
               placeholder="メモ（任意）"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+              className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setAssignEntryId(null)}
-                className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex-1 border border-line text-ink-2 text-sm font-medium py-3 rounded-xl hover:bg-tint transition-colors"
               >
                 後で設定する
               </button>
               <button
                 onClick={handleAssign}
                 disabled={!assignProjectId || !assignTaskId}
-                className="flex-1 bg-gray-900 hover:bg-gray-700 disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
+                className="flex-1 bg-accent-strong hover:bg-accent-deep disabled:opacity-30 text-white text-sm font-medium py-3 rounded-xl transition-colors"
               >
                 保存
               </button>

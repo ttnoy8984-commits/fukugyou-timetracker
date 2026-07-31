@@ -27,7 +27,7 @@ export function DonutChart({
 
   const total = slices.reduce((s, x) => s + x.value, 0);
   if (total <= 0) {
-    return <p className="text-sm text-gray-400 text-center py-8">データがありません</p>;
+    return <p className="text-sm text-ink-3 text-center py-8">データがありません</p>;
   }
 
   const R = 40;
@@ -68,13 +68,13 @@ export function DonutChart({
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4">
           {active ? (
             <>
-              <span className="text-[10px] text-gray-500 text-center leading-tight line-clamp-2">{active.label}</span>
-              <span className="text-sm font-mono font-medium text-gray-900">{Math.round(active.frac * 100)}%</span>
+              <span className="text-[10px] text-ink-2 text-center leading-tight line-clamp-2">{active.label}</span>
+              <span className="text-sm font-mono font-medium text-ink">{Math.round(active.frac * 100)}%</span>
             </>
           ) : (
             <>
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider">{centerLabel}</span>
-              <span className="text-sm font-mono font-medium text-gray-900">{formatValue(total)}</span>
+              <span className="text-[10px] text-ink-3 uppercase tracking-wider">{centerLabel}</span>
+              <span className="text-sm font-mono font-medium text-ink">{formatValue(total)}</span>
             </>
           )}
         </div>
@@ -85,14 +85,14 @@ export function DonutChart({
         {arcs.map((a) => (
           <li
             key={a.i}
-            className={`flex items-center gap-2 text-xs rounded px-1.5 py-1 -mx-1.5 transition-colors ${hovered === a.i ? "bg-gray-50" : ""}`}
+            className={`flex items-center gap-2 text-xs rounded px-1.5 py-1 -mx-1.5 transition-colors ${hovered === a.i ? "bg-tint" : ""}`}
             onMouseEnter={() => setHovered(a.i)}
             onMouseLeave={() => setHovered(null)}
           >
             <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: a.color }} />
-            <span className="text-gray-700 truncate flex-1 min-w-0">{a.label}</span>
-            <span className="font-mono text-gray-500 flex-shrink-0">{formatValue(a.value)}</span>
-            <span className="font-mono text-gray-400 w-9 text-right flex-shrink-0">{Math.round(a.frac * 100)}%</span>
+            <span className="text-ink-2 truncate flex-1 min-w-0">{a.label}</span>
+            <span className="font-mono text-ink-2 flex-shrink-0">{formatValue(a.value)}</span>
+            <span className="font-mono text-ink-3 w-9 text-right flex-shrink-0">{Math.round(a.frac * 100)}%</span>
           </li>
         ))}
       </ul>
@@ -107,10 +107,10 @@ export function StatTile({
   label: string; value: string; sub?: string; accent?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
-      <p className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{label}</p>
-      <p className={`font-light text-gray-900 ${accent ? "text-2xl font-mono" : "text-2xl"}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="bg-white rounded-2xl border border-line-2 px-5 py-4">
+      <p className="text-xs text-ink-3 uppercase tracking-wider mb-1.5">{label}</p>
+      <p className={`font-light text-ink ${accent ? "text-2xl font-mono" : "text-2xl"}`}>{value}</p>
+      {sub && <p className="text-xs text-ink-3 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -135,7 +135,7 @@ export function MonthlyBars({
   return (
     <div className="flex gap-2">
       {/* Y軸（時間の目盛り） */}
-      <div className="flex flex-col justify-between h-32 text-[10px] text-gray-400 text-right w-8 flex-shrink-0 py-0">
+      <div className="flex flex-col justify-between h-32 text-[10px] text-ink-3 text-right w-8 flex-shrink-0 py-0">
         {ticks.map((t) => <div key={t}>{t}h</div>)}
       </div>
 
@@ -143,7 +143,7 @@ export function MonthlyBars({
         <div className="relative h-32">
           {/* 横方向のグリッド線 */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-            {ticks.map((t) => <div key={t} className="border-t border-gray-100 w-full" />)}
+            {ticks.map((t) => <div key={t} className="border-t border-line-2 w-full" />)}
           </div>
           <div className="absolute inset-0 flex items-end gap-1.5">
             {data.map((d, i) => {
@@ -156,16 +156,16 @@ export function MonthlyBars({
                   onMouseLeave={() => setHovered(null)}
                 >
                   {hovered === i && d.seconds > 0 && (
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-gray-900 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap z-10">
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-accent-strong text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap z-10">
                       {formatValue(d.seconds)}
-                      {d.count > 0 && <span className="text-gray-300 ml-1.5">¥{Math.round(d.amount).toLocaleString()}</span>}
+                      {d.count > 0 && <span className="text-accent-100 ml-1.5">¥{Math.round(d.amount).toLocaleString()}</span>}
                     </div>
                   )}
                   <div
                     className="w-full rounded-t transition-colors"
                     style={{
                       height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
-                      backgroundColor: hovered === i ? "#2a78d6" : "#86b6ef",
+                      backgroundColor: hovered === i ? "#1d7979" : "#28a6a5",
                     }}
                   />
                 </div>
@@ -175,7 +175,7 @@ export function MonthlyBars({
         </div>
         <div className="flex gap-1.5 mt-1.5">
           {data.map((d) => (
-            <div key={d.month} className="flex-1 text-center text-[10px] text-gray-400">{d.month}</div>
+            <div key={d.month} className="flex-1 text-center text-[10px] text-ink-3">{d.month}</div>
           ))}
         </div>
       </div>

@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
+/*
+ * ブランド3色から組み立てたパレット。
+ *   アクセント #28A6A5 / ベース #F9FCFD / テキスト #082627
+ * アクセントそのままだと白文字が 2.96:1 しかなく読めないので、
+ * ボタンなど白文字を乗せる面には濃いステップ(accent-strong 5.2:1)を使う。
+ * ink-3 は旧 gray-400 (2.46:1) の置き換えで 4.2:1 まで濃くしてある。
+ */
+@theme {
+  --color-base: #f9fcfd;          /* ページ背景 */
+  --color-surface: #ffffff;       /* カード */
+
+  --color-ink: #082627;           /* 本文・見出し  15.5:1 */
+  --color-ink-2: #465c5d;         /* 副次テキスト   6.9:1 */
+  --color-ink-3: #6b7d7d;         /* 補助・ラベル   4.2:1 */
+
+  --color-line: #e1e5e5;          /* 罫線 */
+  --color-line-2: #eff3f3;        /* 淡い罫線・区切り */
+  --color-tint: #f3f7f7;          /* 淡い面（テーブルヘッダ等） */
+
+  --color-accent: #28a6a5;        /* ブランド色（塗り・グラフ） */
+  --color-accent-strong: #1d7979; /* 白文字を乗せる面 5.2:1 */
+  --color-accent-deep: #166060;   /* hover 7.3:1 */
+  --color-accent-text: #1a6c6c;   /* アクセント色の文字 6.2:1 */
+  --color-accent-50: #eef8f8;     /* 淡い背景 */
+  --color-accent-100: #dff2f2;
+}
+
 :root {
-  --background: #f8f8f7;
-  --foreground: #1a1a1a;
+  --background: #f9fcfd;
+  --foreground: #082627;
 }
 
 body {
@@ -13,12 +40,18 @@ body {
 }
 
 input, select, textarea {
-  color: #1a1a1a !important;
-  -webkit-text-fill-color: #1a1a1a !important;
+  color: #082627 !important;
+  -webkit-text-fill-color: #082627 !important;
   background-color: #ffffff !important;
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  color: #b0b0b0 !important;
-  -webkit-text-fill-color: #b0b0b0 !important;
+  /* 旧 #b0b0b0 は白地で 2.2:1 しかなく読みづらかったので濃くする */
+  color: #6b7d7d !important;
+  -webkit-text-fill-color: #6b7d7d !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #28a6a5 !important;
+  outline: none;
 }
