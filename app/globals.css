@@ -1,35 +1,40 @@
 @import "tailwindcss";
 
 /*
- * ブランド3色から組み立てたパレット。
- *   アクセント #28A6A5 / ベース #F9FCFD / テキスト #082627
- * アクセントそのままだと白文字が 2.96:1 しかなく読めないので、
- * ボタンなど白文字を乗せる面には濃いステップ(accent-strong 5.2:1)を使う。
- * ink-3 は旧 gray-400 (2.46:1) の置き換えで 4.2:1 まで濃くしてある。
+ * クライアントのブランドキットから: ネイビー #2A3582 / オレンジ #EB670E / 白 #FFFFFF
+ * ネイビーは白文字で 10.9:1 あるのでボタン等にそのまま使える（旧アクセントは 2.96:1 しかなく
+ * accent-strong に濃さを足す必要があったが、今回はその濃さ調整が不要）。
+ * オレンジは白文字だと 3.24:1 で本文には使えないため、差し色・グラフの塗りに限定し、
+ * 白文字を乗せる場合だけ orange-strong (5.0:1) を使う。
+ * ink-2/ink-3 は旧gray-500/400 の置き換えで、それぞれ 7.1:1 / 4.0:1。
  */
 @theme {
-  --color-base: #f9fcfd;          /* ページ背景 */
+  --color-base: #f9fbfd;          /* ページ背景（ネイビーをごく薄く） */
   --color-surface: #ffffff;       /* カード */
 
-  --color-ink: #082627;           /* 本文・見出し  15.5:1 */
-  --color-ink-2: #465c5d;         /* 副次テキスト   6.9:1 */
-  --color-ink-3: #6b7d7d;         /* 補助・ラベル   4.2:1 */
+  --color-ink: #202862;           /* 本文・見出し  13.6:1 */
+  --color-ink-2: #4a5395;         /* 副次テキスト   7.1:1 */
+  --color-ink-3: #757cae;         /* 補助・ラベル   4.0:1 */
 
-  --color-line: #e1e5e5;          /* 罫線 */
-  --color-line-2: #eff3f3;        /* 淡い罫線・区切り */
-  --color-tint: #f3f7f7;          /* 淡い面（テーブルヘッダ等） */
+  --color-line: #e1e3ee;          /* 罫線 */
+  --color-line-2: #eeeff5;        /* 淡い罫線・区切り */
+  --color-tint: #f4f5f9;          /* 淡い面（テーブルヘッダ等） */
 
-  --color-accent: #28a6a5;        /* ブランド色（塗り・グラフ） */
-  --color-accent-strong: #1d7979; /* 白文字を乗せる面 5.2:1 */
-  --color-accent-deep: #166060;   /* hover 7.3:1 */
-  --color-accent-text: #1a6c6c;   /* アクセント色の文字 6.2:1 */
-  --color-accent-50: #eef8f8;     /* 淡い背景 */
-  --color-accent-100: #dff2f2;
+  --color-accent: #2a3582;        /* ブランド色（ボタン・タブ選択・フォーカス） */
+  --color-accent-strong: #2a3582; /* 白文字を乗せる面 10.9:1（そのまま使える） */
+  --color-accent-deep: #222a68;   /* hover */
+  --color-accent-text: #2a3582;   /* アクセント色の文字 10.9:1 */
+  --color-accent-50: #f2f3f8;     /* 淡い背景 */
+  --color-accent-100: #e5e7f0;
+
+  --color-highlight: #eb670e;         /* ブランドの差し色（グラフ・バッジ等） */
+  --color-highlight-strong: #b7500b;  /* 白文字を乗せる面 5.0:1 */
+  --color-highlight-tint: #f6bb93;    /* 淡色（グラフの副次列など） */
 }
 
 :root {
-  --background: #f9fcfd;
-  --foreground: #082627;
+  --background: #f9fbfd;
+  --foreground: #202862;
 }
 
 body {
@@ -40,18 +45,17 @@ body {
 }
 
 input, select, textarea {
-  color: #082627 !important;
-  -webkit-text-fill-color: #082627 !important;
+  color: #202862 !important;
+  -webkit-text-fill-color: #202862 !important;
   background-color: #ffffff !important;
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  /* 旧 #b0b0b0 は白地で 2.2:1 しかなく読みづらかったので濃くする */
-  color: #6b7d7d !important;
-  -webkit-text-fill-color: #6b7d7d !important;
+  color: #757cae !important;
+  -webkit-text-fill-color: #757cae !important;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #28a6a5 !important;
+  border-color: #2a3582 !important;
   outline: none;
 }

@@ -189,7 +189,7 @@ export function TimeBars({
                     style={{
                       height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
                       backgroundColor:
-                        hovered === i ? "#1d7979" : d.muted ? "#9ecfce" : "#28a6a5",
+                        hovered === i ? "#222a68" : d.muted ? "#9fa4c7" : "#2a3582",
                     }}
                   />
                 </div>
