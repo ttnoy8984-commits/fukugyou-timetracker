@@ -7,14 +7,15 @@ import Timer from "@/components/Timer";
 import ProjectManager from "@/components/ProjectManager";
 import EntryLog from "@/components/EntryLog";
 import MonthlyReport from "@/components/MonthlyReport";
+import { IconChart, IconFolder, IconList, IconStopwatch, IconTimer } from "@/components/icons";
 
 type Tab = "timer" | "projects" | "log" | "report";
 
-const tabs: { key: Tab; label: string }[] = [
-  { key: "timer", label: "タイマー" },
-  { key: "projects", label: "案件" },
-  { key: "log", label: "ログ" },
-  { key: "report", label: "レポート" },
+const tabs: { key: Tab; label: string; icon: (p: { className?: string }) => React.JSX.Element }[] = [
+  { key: "timer", label: "タイマー", icon: IconTimer },
+  { key: "projects", label: "案件", icon: IconFolder },
+  { key: "log", label: "ログ", icon: IconList },
+  { key: "report", label: "レポート", icon: IconChart },
 ];
 
 /** 0→A, 1→B, ... 25→Z, 26→AA */
@@ -92,7 +93,10 @@ export default function Home() {
       <header className="bg-white border-b border-line-2">
         <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-ink tracking-tight">副業タイムトラッカー</h1>
+            <h1 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
+              <IconStopwatch className="w-5 h-5 text-accent flex-shrink-0" />
+              副業タイムトラッカー
+            </h1>
             {privacy && (
               <p className="text-[10px] text-accent-text mt-0.5">案件名を伏せて表示中</p>
             )}
@@ -146,12 +150,13 @@ export default function Home() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`py-3 text-sm transition-colors border-b-2 ${
+              className={`py-3 text-sm transition-colors border-b-2 flex items-center gap-1.5 ${
                 tab === t.key
                   ? "border-accent-strong text-ink font-medium"
                   : "border-transparent text-ink-3 hover:text-ink-2"
               }`}
             >
+              <t.icon className="w-4 h-4" />
               {t.label}
             </button>
           ))}
