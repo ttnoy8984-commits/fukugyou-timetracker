@@ -51,6 +51,8 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   const mFilteredTasks = mProjectId ? tasksForProject(mProjectId) : tasks;
   const activeProject = projects.find((p) => p.id === activeEntry?.projectId);
   const activeTask = tasks.find((t) => t.id === activeEntry?.taskId);
+  // 完了案件は新規の作業選択肢からは外す（過去の記録には引き続き紐づいたまま表示される）
+  const selectableProjects = projects.filter((p) => !p.completedAt);
 
   function handleStart() {
     onStart(projectId || null, taskId || null, note);
@@ -163,7 +165,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                 className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               >
                 <option value="">案件（後で設定可）</option>
-                {projects.map((p) => (
+                {selectableProjects.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
@@ -202,7 +204,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
             className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
           >
             <option value="">案件を選択</option>
-            {projects.map((p) => (
+            {selectableProjects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -275,7 +277,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
         </div>
       )}
 
-      {projects.length === 0 && (
+      {selectableProjects.length === 0 && (
         <p className="text-center text-sm text-ink-3">まず「案件」タブで案件とタスクを登録してください</p>
       )}
 
@@ -293,7 +295,7 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
               className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
             >
               <option value="">案件を選択</option>
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {selectableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <select
               value={assignTaskId}

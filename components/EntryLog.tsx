@@ -44,6 +44,8 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   }
 
   const activeFilters = [filterProject, filterTask, filterDateFrom, filterDateTo].filter(Boolean).length;
+  // 完了案件は絞り込み・編集の選択肢からは外す（過去ログの表示・並び替えには引き続き使う）
+  const selectableProjects = projects.filter((p) => !p.completedAt);
 
   const filtered = entries
     .filter((e) => e.endTime !== null)
@@ -142,7 +144,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
               className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
             >
               <option value="">すべて</option>
-              {projects.map((p) => (
+              {selectableProjects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
@@ -270,7 +272,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
               <select value={editProjectId} onChange={(e) => { setEditProjectId(e.target.value); setEditTaskId(""); }}
                 className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent">
                 <option value="">案件を選択</option>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {selectableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
             <div>
