@@ -9,7 +9,7 @@
  * ink-2/ink-3 は旧gray-500/400 の置き換えで、それぞれ 7.1:1 / 4.0:1。
  */
 @theme {
-  --color-base: #f9fbfd;          /* ページ背景（ネイビーをごく薄く） */
+  --color-page: #f9fbfd;          /* ページ背景（ネイビーをごく薄く） */
   --color-surface: #ffffff;       /* カード */
 
   --color-ink: #202862;           /* 本文・見出し  13.6:1 */

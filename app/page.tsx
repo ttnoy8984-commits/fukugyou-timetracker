@@ -87,7 +87,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-base">
+    <div className="min-h-screen bg-page">
       {/* Header */}
       <header className="bg-white border-b border-line-2">
         <div className="max-w-xl sm:max-w-2xl lg:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
