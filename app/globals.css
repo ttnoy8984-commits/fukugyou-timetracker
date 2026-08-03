@@ -1,39 +1,37 @@
 @import "tailwindcss";
 
 /*
- * クライアントのブランドキットから: ネイビー #2A3582 / オレンジ #EB670E / 白 #FFFFFF
- * ネイビーは白文字で 10.9:1 あるのでボタン等にそのまま使える（旧アクセントは 2.96:1 しかなく
- * accent-strong に濃さを足す必要があったが、今回はその濃さ調整が不要）。
- * オレンジは白文字だと 3.24:1 で本文には使えないため、差し色・グラフの塗りに限定し、
- * 白文字を乗せる場合だけ orange-strong (5.0:1) を使う。
- * ink-2/ink-3 は旧gray-500/400 の置き換えで、それぞれ 7.1:1 / 4.0:1。
+ * クライアントのブランドキットから: オレンジ #EB670E をベース、ネイビー #2A3582 を差し色に。
+ * オレンジは白文字だと 3.24:1 で本文には使えないため、ボタン・タブなど
+ * 白文字を乗せる面は20%黒を混ぜた accent-strong (4.8:1) を使う。
+ * ink-2/ink-3 はネイビーの薄め段階（旧gray-500/400の置き換え）。
  */
 @theme {
-  --color-page: #f9fbfd;          /* ページ背景（ネイビーをごく薄く） */
+  --color-page: #fefaf8;          /* ページ背景（オレンジをごく薄く） */
   --color-surface: #ffffff;       /* カード */
 
   --color-ink: #202862;           /* 本文・見出し  13.6:1 */
   --color-ink-2: #4a5395;         /* 副次テキスト   7.1:1 */
   --color-ink-3: #757cae;         /* 補助・ラベル   4.0:1 */
 
-  --color-line: #e1e3ee;          /* 罫線 */
-  --color-line-2: #eeeff5;        /* 淡い罫線・区切り */
-  --color-tint: #f4f5f9;          /* 淡い面（テーブルヘッダ等） */
+  --color-line: #f0ddc9;          /* 罫線（オレンジ寄りのニュートラル） */
+  --color-line-2: #f7ece1;        /* 淡い罫線・区切り */
+  --color-tint: #fdf3ea;          /* 淡い面（テーブルヘッダ等） */
 
-  --color-accent: #2a3582;        /* ブランド色（ボタン・タブ選択・フォーカス） */
-  --color-accent-strong: #2a3582; /* 白文字を乗せる面 10.9:1（そのまま使える） */
-  --color-accent-deep: #222a68;   /* hover */
-  --color-accent-text: #2a3582;   /* アクセント色の文字 10.9:1 */
-  --color-accent-50: #f2f3f8;     /* 淡い背景 */
-  --color-accent-100: #e5e7f0;
+  --color-accent: #eb670e;        /* ブランドのベース色（ボタン・タブ選択・フォーカス） */
+  --color-accent-strong: #bc520b; /* 白文字を乗せる面 4.8:1 */
+  --color-accent-deep: #a4480a;   /* hover 6.0:1 */
+  --color-accent-text: #bc520b;   /* アクセント色の文字 4.8:1 */
+  --color-accent-50: #fef4ee;     /* 淡い背景 */
+  --color-accent-100: #fdede2;
 
-  --color-highlight: #eb670e;         /* ブランドの差し色（グラフ・バッジ等） */
-  --color-highlight-strong: #b7500b;  /* 白文字を乗せる面 5.0:1 */
-  --color-highlight-tint: #f6bb93;    /* 淡色（グラフの副次列など） */
+  --color-highlight: #2a3582;         /* 差し色（グラフの副系統・強調） */
+  --color-highlight-strong: #2a3582;  /* 白文字を乗せる面 10.9:1（そのまま使える） */
+  --color-highlight-tint: #9fa4c7;    /* 淡色（グラフの副次列など） */
 }
 
 :root {
-  --background: #f9fbfd;
+  --background: #fefaf8;
   --foreground: #202862;
 }
 
@@ -56,6 +54,6 @@ input::placeholder, select::placeholder, textarea::placeholder {
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #2a3582 !important;
+  border-color: #eb670e !important;
   outline: none;
 }
