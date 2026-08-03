@@ -4,15 +4,15 @@
  * クライアントのブランドキットから: オレンジ #EB670E をベース、ネイビー #2A3582 を差し色に。
  * オレンジは白文字だと 3.24:1 で本文には使えないため、ボタン・タブなど
  * 白文字を乗せる面は20%黒を混ぜた accent-strong (4.8:1) を使う。
- * ink-2/ink-3 はネイビーの薄め段階（旧gray-500/400の置き換え）。
+ * 本文の文字色（ink系）はネイビー系だと浮いて見えたため、元のニュートラルな濃色に戻した。
  */
 @theme {
   --color-page: #fefaf8;          /* ページ背景（オレンジをごく薄く） */
   --color-surface: #ffffff;       /* カード */
 
-  --color-ink: #202862;           /* 本文・見出し  13.6:1 */
-  --color-ink-2: #4a5395;         /* 副次テキスト   7.1:1 */
-  --color-ink-3: #757cae;         /* 補助・ラベル   4.0:1 */
+  --color-ink: #082627;           /* 本文・見出し  15.4:1 */
+  --color-ink-2: #465c5d;         /* 副次テキスト   6.9:1 */
+  --color-ink-3: #6b7d7d;         /* 補助・ラベル   4.2:1 */
 
   --color-line: #f0ddc9;          /* 罫線（オレンジ寄りのニュートラル） */
   --color-line-2: #f7ece1;        /* 淡い罫線・区切り */
@@ -32,7 +32,7 @@
 
 :root {
   --background: #fefaf8;
-  --foreground: #202862;
+  --foreground: #082627;
 }
 
 body {
@@ -43,14 +43,14 @@ body {
 }
 
 input, select, textarea {
-  color: #202862 !important;
-  -webkit-text-fill-color: #202862 !important;
+  color: #082627 !important;
+  -webkit-text-fill-color: #082627 !important;
   background-color: #ffffff !important;
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  color: #757cae !important;
-  -webkit-text-fill-color: #757cae !important;
+  color: #6b7d7d !important;
+  -webkit-text-fill-color: #6b7d7d !important;
 }
 
 input:focus, select:focus, textarea:focus {
