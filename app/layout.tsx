@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "副業タイムトラッカー",
+  title: "時給ノート",
   description: "副業の作業時間・報酬を管理するアプリ",
 };
 

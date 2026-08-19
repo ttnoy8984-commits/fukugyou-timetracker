@@ -95,7 +95,7 @@ export default function Home() {
           <div>
             <h1 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
               <IconStopwatch className="w-5 h-5 text-accent flex-shrink-0" />
-              副業タイムトラッカー
+              時給ノート
             </h1>
             {privacy && (
               <p className="text-[10px] text-accent-text mt-0.5">案件名を伏せて表示中</p>
