@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "時給ノート",
   description: "副業の作業時間・報酬を管理するアプリ",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "時給ノート",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#eb670e",
 };
 
 export default function RootLayout({

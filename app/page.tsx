@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppData } from "@/lib/useAppData";
 import { loadSeedData } from "@/lib/seed";
 import Timer from "@/components/Timer";
@@ -41,6 +41,19 @@ export default function Home() {
     window.location.reload();
     void d;
   }
+
+  // タイマー稼働中は他のタブを見ていても気づけるよう、ブラウザタブのタイトルに経過時間を出す
+  useEffect(() => {
+    if (!activeEntry) {
+      document.title = "時給ノート";
+      return;
+    }
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+    const s = String(elapsed % 60).padStart(2, "0");
+    document.title = `${isPaused ? "⏸" : "⏱"} ${h}:${m}:${s} — 時給ノート`;
+    return () => { document.title = "時給ノート"; };
+  }, [activeEntry, elapsed, isPaused]);
 
   /*
    * スクショ共有用のマスク。全部を「****」にすると円グラフの凡例が
