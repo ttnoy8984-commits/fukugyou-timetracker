@@ -1,9 +1,9 @@
-import { AppData, Client, Project, Task, TaskGroup, TimeEntry } from "./types";
+import { AppData, Client, Favorite, Project, Task, TaskGroup, TimeEntry } from "./types";
 
 const KEY = "fukugyou_data";
 export const TAX_RATE = 0.1;
 
-const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [] };
+const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [], favorites: [] };
 
 export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
@@ -56,6 +56,7 @@ export function loadData(): AppData {
       taskGroups,
       clients: parsed.clients ?? [],
       entries,
+      favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
     };
   } catch {
     return defaultData;
@@ -107,6 +108,10 @@ export function createTask(name: string): Task {
 
 export function createTaskGroup(name: string): TaskGroup {
   return { id: crypto.randomUUID(), name, taskIds: [], createdAt: new Date().toISOString() };
+}
+
+export function createFavorite(projectId: string, taskId: string | null): Favorite {
+  return { id: crypto.randomUUID(), projectId, taskId, createdAt: new Date().toISOString() };
 }
 
 export function createEntry(

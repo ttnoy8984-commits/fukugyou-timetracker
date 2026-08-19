@@ -22,6 +22,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   const [filterTask, setFilterTask] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [editProjectId, setEditProjectId] = useState("");
@@ -43,16 +44,27 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
     return <span className="text-ink-2 ml-0.5">{sortDir === "desc" ? "↓" : "↑"}</span>;
   }
 
-  const activeFilters = [filterProject, filterTask, filterDateFrom, filterDateTo].filter(Boolean).length;
+  const activeFilters = [filterProject, filterTask, filterDateFrom, filterDateTo, searchQuery].filter(Boolean).length;
   // 完了案件は絞り込み・編集の選択肢からは外す（過去ログの表示・並び替えには引き続き使う）
   const selectableProjects = projects.filter((p) => !p.completedAt);
 
+  const query = searchQuery.trim().toLowerCase();
   const filtered = entries
     .filter((e) => e.endTime !== null)
     .filter((e) => !filterProject || e.projectId === filterProject)
     .filter((e) => !filterTask || e.taskId === filterTask)
     .filter((e) => !filterDateFrom || e.date >= filterDateFrom)
-    .filter((e) => !filterDateTo || e.date <= filterDateTo);
+    .filter((e) => !filterDateTo || e.date <= filterDateTo)
+    .filter((e) => {
+      if (!query) return true;
+      const projectName = projects.find((p) => p.id === e.projectId)?.name ?? "";
+      const taskName = tasks.find((t) => t.id === e.taskId)?.name ?? "";
+      return (
+        e.note.toLowerCase().includes(query) ||
+        projectName.toLowerCase().includes(query) ||
+        taskName.toLowerCase().includes(query)
+      );
+    });
 
   const totalFilteredSeconds = filtered.reduce((sum, e) => sum + e.durationSeconds, 0);
 
@@ -120,21 +132,72 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
 
   const editFilteredTasks = tasks;
 
+  function handleExportCsv() {
+    const rows = [...filtered].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const header = ["日付", "案件", "タスク", "開始", "終了", "作業時間(分)", "休憩(分)", "メモ"];
+    const lines = rows.map((e) => {
+      const project = projects.find((p) => p.id === e.projectId);
+      const task = tasks.find((t) => t.id === e.taskId);
+      const start = new Date(e.startTime);
+      const end = e.endTime ? new Date(e.endTime) : null;
+      const fmtTime = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      const cells = [
+        e.date,
+        project?.name ?? "",
+        task?.name ?? "",
+        fmtTime(start),
+        end ? fmtTime(end) : "",
+        String(Math.round(e.durationSeconds / 60)),
+        String(Math.round((e.pausedSeconds ?? 0) / 60)),
+        e.note ?? "",
+      ];
+      // CSVエスケープ：カンマ・改行・引用符を含む値のみダブルクオートで囲む
+      return cells.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",");
+    });
+    // Excelでの文字化け対策にBOMを付与
+    const csv = "﻿" + [header.join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const today = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `時給ノート_ログ_${today}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       {/* フィルターバー */}
       <div className="bg-white rounded-2xl border border-line-2 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">絞り込み</span>
-          {activeFilters > 0 && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => { setFilterProject(""); setFilterTask(""); setFilterDateFrom(""); setFilterDateTo(""); }}
-              className="text-xs text-accent-text hover:text-accent-deep"
+              onClick={handleExportCsv}
+              disabled={filtered.length === 0}
+              className="text-xs text-ink-3 hover:text-ink-2 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
             >
-              クリア（{activeFilters}件）
+              CSV書き出し（{filtered.length}件）
             </button>
-          )}
+            {activeFilters > 0 && (
+              <button
+                onClick={() => { setFilterProject(""); setFilterTask(""); setFilterDateFrom(""); setFilterDateTo(""); setSearchQuery(""); }}
+                className="text-xs text-accent-text hover:text-accent-deep"
+              >
+                クリア（{activeFilters}件）
+              </button>
+            )}
+          </div>
         </div>
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="メモ・案件名・タスク名で検索"
+          className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+        />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div>
             <label className="text-xs text-ink-3 mb-1 block">案件</label>

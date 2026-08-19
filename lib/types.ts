@@ -30,6 +30,13 @@ export interface TaskGroup {
   createdAt: string;
 }
 
+export interface Favorite {
+  id: string;
+  projectId: string;
+  taskId: string | null;
+  createdAt: string;
+}
+
 export interface TimeEntry {
   id: string;
   projectId: string | null;
@@ -48,4 +55,5 @@ export interface AppData {
   taskGroups: TaskGroup[];
   clients: Client[];
   entries: TimeEntry[];
+  favorites: Favorite[];
 }

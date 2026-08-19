@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Project, Task, TimeEntry } from "@/lib/types";
+import { Favorite, Project, Task, TimeEntry } from "@/lib/types";
 import { formatDuration } from "@/lib/storage";
 
 interface Props {
   projects: Project[];
   tasks: Task[];
+  favorites: Favorite[];
   activeEntry: TimeEntry | null;
   elapsed: number;
   isPaused: boolean;
@@ -16,9 +17,11 @@ interface Props {
   onStop: () => string | null;
   onUpdate: (id: string, projectId: string, taskId: string, note: string) => void;
   onManualAdd: (projectId: string | null, taskId: string | null, date: string, startTime: string, endTime: string, note: string) => void;
+  onAddFavorite: (projectId: string, taskId: string | null) => void;
+  onDeleteFavorite: (id: string) => void;
 }
 
-export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onUpdate, onManualAdd }: Props) {
+export default function Timer({ projects, tasks, favorites, activeEntry, elapsed, isPaused, onStart, onPause, onResume, onStop, onUpdate, onManualAdd, onAddFavorite, onDeleteFavorite }: Props) {
   const [mode, setMode] = useState<"timer" | "manual">("timer");
 
   // タイマー用
@@ -53,6 +56,13 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
   const activeTask = tasks.find((t) => t.id === activeEntry?.taskId);
   // 完了案件は新規の作業選択肢からは外す（過去の記録には引き続き紐づいたまま表示される）
   const selectableProjects = projects.filter((p) => !p.completedAt);
+  // 案件が削除・完了した後のお気に入りは表示から外す
+  const visibleFavorites = favorites.filter((f) => selectableProjects.some((p) => p.id === f.projectId));
+  const isCurrentFavorited = !!projectId && favorites.some((f) => f.projectId === projectId && f.taskId === (taskId || null));
+
+  function handleStartFavorite(f: Favorite) {
+    onStart(f.projectId, f.taskId, "");
+  }
 
   function handleStart() {
     onStart(projectId || null, taskId || null, note);
@@ -122,6 +132,37 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
         </button>
       </div>
 
+      {mode === "timer" && !activeEntry && visibleFavorites.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {visibleFavorites.map((f) => {
+            const proj = projects.find((p) => p.id === f.projectId);
+            const task = tasks.find((t) => t.id === f.taskId);
+            if (!proj) return null;
+            return (
+              <div
+                key={f.id}
+                className="group flex items-center gap-1 bg-white border border-line-2 rounded-full pl-1 pr-1 py-1 text-xs"
+              >
+                <button
+                  onClick={() => handleStartFavorite(f)}
+                  className="flex items-center gap-1.5 pl-2 pr-1 py-0.5 text-ink-2 hover:text-ink"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />
+                  {proj.name}{task ? ` / ${task.name}` : ""}
+                </button>
+                <button
+                  onClick={() => onDeleteFavorite(f.id)}
+                  className="text-ink-3 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 flex items-center justify-center flex-shrink-0"
+                  title="お気に入りから削除"
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {mode === "timer" ? (
         <div className="bg-white rounded-2xl p-8 space-y-4 border border-line-2">
           {activeEntry ? (
@@ -185,6 +226,15 @@ export default function Timer({ projects, tasks, activeEntry, elapsed, isPaused,
                 placeholder="メモ（任意）"
                 className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
               />
+              {projectId && (
+                <button
+                  onClick={() => onAddFavorite(projectId, taskId || null)}
+                  disabled={isCurrentFavorited}
+                  className="text-xs text-ink-3 hover:text-accent-text disabled:opacity-40 disabled:cursor-default flex items-center gap-1"
+                >
+                  {isCurrentFavorited ? "★ お気に入り登録済み" : "☆ お気に入りに登録"}
+                </button>
+              )}
               <button
                 onClick={handleStart}
                 className="w-full bg-accent-strong hover:bg-accent-deep text-white text-sm font-medium py-3 rounded-xl transition-colors"

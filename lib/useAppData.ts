@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { AppData, TimeEntry } from "./types";
+import { AppData, Favorite, Project, TimeEntry } from "./types";
 import {
   calcAmountExcludingTax,
   calcAmountIncludingTax,
   calcEffectiveHourlyRate,
   createClient,
   createEntry,
+  createFavorite,
   createProject,
   createTask,
   createTaskGroup,
@@ -16,7 +17,7 @@ import {
 } from "./storage";
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], clients: [], entries: [] });
+  const [data, setData] = useState<AppData>({ projects: [], tasks: [], taskGroups: [], clients: [], entries: [], favorites: [] });
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -131,7 +132,44 @@ export function useAppData() {
         ...data,
         projects: data.projects.filter((p) => p.id !== id),
         entries: data.entries.filter((e) => e.projectId !== id),
+        favorites: data.favorites.filter((f) => f.projectId !== id),
       });
+    },
+    [data, persist]
+  );
+
+  const restoreEntry = useCallback(
+    (entry: TimeEntry) => {
+      persist({ ...data, entries: [...data.entries, entry] });
+    },
+    [data, persist]
+  );
+
+  const restoreProject = useCallback(
+    (project: Project, entries: TimeEntry[], favorites: Favorite[]) => {
+      persist({
+        ...data,
+        projects: [...data.projects, project],
+        entries: [...data.entries, ...entries],
+        favorites: [...data.favorites, ...favorites],
+      });
+    },
+    [data, persist]
+  );
+
+  const addFavorite = useCallback(
+    (projectId: string, taskId: string | null) => {
+      const exists = data.favorites.some((f) => f.projectId === projectId && f.taskId === taskId);
+      if (exists) return;
+      const f = createFavorite(projectId, taskId);
+      persist({ ...data, favorites: [...data.favorites, f] });
+    },
+    [data, persist]
+  );
+
+  const deleteFavorite = useCallback(
+    (id: string) => {
+      persist({ ...data, favorites: data.favorites.filter((f) => f.id !== id) });
     },
     [data, persist]
   );
@@ -434,6 +472,27 @@ export function useAppData() {
     }).filter((p) => p.totalSeconds > 0 || p.contractAmount > 0);
   }, [data]);
 
+  const getClientSummaries = useCallback(() => {
+    const byClient: Record<string, {
+      id: string; name: string; totalSeconds: number; includingTaxAmount: number; projectCount: number;
+    }> = {};
+    for (const p of data.projects) {
+      const key = p.clientId ?? "__none__";
+      const clientName = (data.clients ?? []).find((c) => c.id === p.clientId)?.name ?? "クライアント未設定";
+      const projectEntries = data.entries.filter((e) => e.projectId === p.id && e.endTime !== null);
+      const totalSeconds = projectEntries.reduce((sum, e) => sum + e.durationSeconds, 0);
+      const includingTax = calcAmountIncludingTax(p.contractAmount, p.taxIncluded);
+      if (!byClient[key]) byClient[key] = { id: key, name: clientName, totalSeconds: 0, includingTaxAmount: 0, projectCount: 0 };
+      byClient[key].totalSeconds += totalSeconds;
+      byClient[key].includingTaxAmount += includingTax;
+      byClient[key].projectCount += 1;
+    }
+    return Object.values(byClient)
+      .map((c) => ({ ...c, effectiveRate: calcEffectiveHourlyRate(c.totalSeconds, c.includingTaxAmount) }))
+      .filter((c) => c.totalSeconds > 0 || c.includingTaxAmount > 0)
+      .sort((a, b) => b.totalSeconds - a.totalSeconds);
+  }, [data]);
+
   return {
     data,
     activeEntry,
@@ -467,5 +526,10 @@ export function useAppData() {
     assignEntry,
     getMonthlySummary,
     getProjectSummaries,
+    getClientSummaries,
+    restoreEntry,
+    restoreProject,
+    addFavorite,
+    deleteFavorite,
   };
 }

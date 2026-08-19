@@ -102,15 +102,22 @@ export function DonutChart({
 
 /** KPIカード。数字そのものが主役なのでグラフにはしない。 */
 export function StatTile({
-  label, value, sub, accent,
+  label, value, sub, accent, subTone = "neutral", delta,
 }: {
   label: string; value: string; sub?: string; accent?: boolean;
+  /** subの色。目標達成/未達など良し悪しを示したいときに使う */
+  subTone?: "neutral" | "good" | "bad";
+  /** 前月比などの補助的な差分表示。subとは別行で色付けする */
+  delta?: { text: string; tone: "good" | "bad" | "neutral" };
 }) {
+  const subColor = subTone === "good" ? "text-emerald-700" : subTone === "bad" ? "text-red-700" : "text-ink-3";
+  const deltaColor = delta?.tone === "good" ? "text-emerald-700" : delta?.tone === "bad" ? "text-red-700" : "text-ink-3";
   return (
     <div className="bg-white rounded-2xl border border-line-2 px-5 py-4">
       <p className="text-xs text-ink-3 uppercase tracking-wider mb-1.5">{label}</p>
       <p className={`font-light text-ink ${accent ? "text-2xl font-mono" : "text-2xl"}`}>{value}</p>
-      {sub && <p className="text-xs text-ink-3 mt-1">{sub}</p>}
+      {sub && <p className={`text-xs mt-1 ${subColor}`}>{sub}</p>}
+      {delta && <p className={`text-xs mt-0.5 ${deltaColor}`}>{delta.text}</p>}
     </div>
   );
 }

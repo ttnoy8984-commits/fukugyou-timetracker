@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppData } from "@/lib/useAppData";
 import { loadSeedData } from "@/lib/seed";
+import { Favorite, Project, TimeEntry } from "@/lib/types";
 import Timer from "@/components/Timer";
 import ProjectManager from "@/components/ProjectManager";
 import EntryLog from "@/components/EntryLog";
 import MonthlyReport from "@/components/MonthlyReport";
+import UndoToast from "@/components/UndoToast";
 import { IconChart, IconFolder, IconList, IconStopwatch, IconTimer } from "@/components/icons";
+
+type PendingUndo =
+  | { type: "entry"; message: string; entry: TimeEntry }
+  | { type: "project"; message: string; project: Project; entries: TimeEntry[]; favorites: Favorite[] };
 
 type Tab = "timer" | "projects" | "log" | "report";
 
@@ -29,12 +35,39 @@ export default function Home() {
   const {
     data, activeEntry, elapsed, isPaused,
     addProject, updateProject, deleteProject, toggleProjectComplete, addTask, deleteTask, addTaskGroup, deleteTaskGroup, addTasksToGroup, removeTaskFromGroup, renameTask, renameTaskGroup, addClient, renameClient, deleteClient,
-    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getProjectTaskBreakdown, getMonthlySummary, getProjectSummaries,
+    startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getProjectTaskBreakdown, getMonthlySummary, getProjectSummaries, getClientSummaries,
+    restoreEntry, restoreProject, addFavorite, deleteFavorite,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
   const [showSeed, setShowSeed] = useState(false);
   const [privacy, setPrivacy] = useState(false);
+  const [undoToast, setUndoToast] = useState<PendingUndo | null>(null);
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 削除の取り消し用トースト。数秒で自動的に消える
+  // undo実行時は最新のrestoreEntry/restoreProject（=最新のdataを閉じ込めた関数）を使うため、
+  // ここでは復元に必要な生データだけをstateに保持し、関数はここで閉じ込めない
+  function showUndo(pending: PendingUndo) {
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    setUndoToast(pending);
+    undoTimeoutRef.current = setTimeout(() => setUndoToast(null), 7000);
+  }
+
+  function handleDeleteEntry(id: string) {
+    const entry = data.entries.find((e) => e.id === id);
+    deleteEntry(id);
+    if (entry) showUndo({ type: "entry", message: "ログを削除しました", entry });
+  }
+
+  function handleDeleteProject(id: string) {
+    const project = data.projects.find((p) => p.id === id);
+    if (!project) return;
+    const relatedEntries = data.entries.filter((e) => e.projectId === id);
+    const relatedFavorites = data.favorites.filter((f) => f.projectId === id);
+    deleteProject(id);
+    showUndo({ type: "project", message: `「${project.name}」を削除しました`, project, entries: relatedEntries, favorites: relatedFavorites });
+  }
 
   function handleLoadSeed() {
     const d = loadSeedData();
@@ -98,6 +131,12 @@ export default function Home() {
     const list = getProjectSummaries();
     if (!privacy) return list;
     return list.map((p) => ({ ...p, name: mask.project.get(p.id) ?? p.name }));
+  };
+
+  const viewClientSummaries = () => {
+    const list = getClientSummaries();
+    if (!privacy) return list;
+    return list.map((c) => ({ ...c, name: mask.client.get(c.name) ?? c.name }));
   };
 
   return (
@@ -182,6 +221,7 @@ export default function Home() {
           <Timer
             projects={viewData.projects}
             tasks={viewData.tasks}
+            favorites={data.favorites}
             activeEntry={activeEntry}
             elapsed={elapsed}
             isPaused={isPaused}
@@ -191,6 +231,8 @@ export default function Home() {
             onStop={stopTimer}
             onUpdate={assignEntry}
             onManualAdd={addManualEntry}
+            onAddFavorite={addFavorite}
+            onDeleteFavorite={deleteFavorite}
           />
         )}
         {tab === "projects" && (
@@ -200,7 +242,7 @@ export default function Home() {
             clients={viewData.clients ?? []}
             onAddProject={addProject}
             onUpdateProject={updateProject}
-            onDeleteProject={deleteProject}
+            onDeleteProject={handleDeleteProject}
             onToggleProjectComplete={toggleProjectComplete}
             onAddTask={addTask}
             onDeleteTask={deleteTask}
@@ -224,14 +266,37 @@ export default function Home() {
             entries={viewData.entries}
             projects={viewData.projects}
             tasks={viewData.tasks}
-            onDelete={deleteEntry}
+            onDelete={handleDeleteEntry}
             onUpdate={updateEntry}
           />
         )}
         {tab === "report" && (
-          <MonthlyReport getMonthlySummary={viewMonthlySummary} getProjectSummaries={viewProjectSummaries} />
+          <MonthlyReport
+            getMonthlySummary={viewMonthlySummary}
+            getProjectSummaries={viewProjectSummaries}
+            getClientSummaries={viewClientSummaries}
+          />
         )}
       </main>
+
+      {undoToast && (
+        <UndoToast
+          message={undoToast.message}
+          onUndo={() => {
+            if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+            if (undoToast.type === "entry") {
+              restoreEntry(undoToast.entry);
+            } else {
+              restoreProject(undoToast.project, undoToast.entries, undoToast.favorites);
+            }
+            setUndoToast(null);
+          }}
+          onDismiss={() => {
+            if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+            setUndoToast(null);
+          }}
+        />
+      )}
     </div>
   );
 }
