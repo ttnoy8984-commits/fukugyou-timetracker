@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Client, Project, Task, TaskGroup } from "@/lib/types";
 import { calcAmountExcludingTax, calcAmountIncludingTax, calcEffectiveHourlyRate, formatDuration } from "@/lib/storage";
 
@@ -51,6 +51,16 @@ type Section = "projects" | "tasks" | "clients";
 type ProjectSortKey = "name" | "client" | "amount" | "rate" | "duration";
 type SortDir = "asc" | "desc";
 type ModalType = "project" | "editProject" | null;
+const TARGET_RATE_KEY = "fukugyou_target_rate";
+
+// 目標時給に対する消化率で色分け（レポートの案件分析タブと同じ基準）
+function burnColor(rate: number, target: number | null): string {
+  if (!target) return "text-ink-2";
+  const ratio = rate / target;
+  if (ratio >= 1) return "text-good";
+  if (ratio >= 0.7) return "text-warn";
+  return "text-bad";
+}
 
 // IME変換中のEnterを無視するヘルパー
 function onEnterKey(fn: () => void) {
@@ -98,6 +108,13 @@ export default function ProjectManager({
   const [showCompleted, setShowCompleted] = useState(false);
   const [completingProjectId, setCompletingProjectId] = useState<string | null>(null);
   const [completeDate, setCompleteDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  // 目標時給（レポートタブで設定した値をそのまま流用し、進行中案件の消化率アラートに使う）
+  const [targetRate, setTargetRate] = useState<number | null>(null);
+  useEffect(() => {
+    const saved = localStorage.getItem(TARGET_RATE_KEY);
+    if (saved) setTargetRate(Number(saved));
+  }, []);
 
   // タスク追加
   const [newTaskName, setNewTaskName] = useState("");
@@ -291,6 +308,9 @@ export default function ProjectManager({
 
                 const activeRows = rowsFor(projects.filter((p) => !p.completedAt));
                 const completedRows = rowsFor(projects.filter((p) => p.completedAt));
+                const burnAlertCount = targetRate
+                  ? activeRows.filter((r) => r.totalSeconds > 0 && r.effectiveRate < targetRate).length
+                  : 0;
 
                 const headerRow = (
                   <tr className="border-b border-line-2 bg-tint">
@@ -373,7 +393,12 @@ export default function ProjectManager({
                             <span className="text-ink-3 ml-1">{p.taxIncluded ? "込" : "抜"}</span>
                           </td>
                           <td className="px-2 py-3 text-right text-xs whitespace-nowrap">
-                            {totalSeconds > 0 ? <span className="text-ink-2">¥{Math.round(effectiveRate).toLocaleString()}</span> : <span className="text-ink-3">—</span>}
+                            {totalSeconds > 0 ? (
+                              <span className={!isCompleted ? burnColor(effectiveRate, targetRate) : "text-ink-2"}>
+                                {!isCompleted && targetRate && effectiveRate < targetRate * 0.7 && "⚠ "}
+                                ¥{Math.round(effectiveRate).toLocaleString()}
+                              </span>
+                            ) : <span className="text-ink-3">—</span>}
                           </td>
                           <td className="px-4 py-3 text-right text-xs font-mono text-ink-2 whitespace-nowrap">
                             {totalSeconds > 0 ? formatDuration(totalSeconds) : "—"}
@@ -422,6 +447,16 @@ export default function ProjectManager({
 
                 return (
                   <>
+                    {burnAlertCount > 0 && (
+                      <div className="bg-accent-50 border border-warn/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
+                        <span className="text-warn text-sm">⚠</span>
+                        <p className="text-xs text-ink-2">
+                          目標時給（¥{targetRate?.toLocaleString()}/h）を下回っている進行中の案件が
+                          <span className="font-medium text-warn mx-0.5">{burnAlertCount}件</span>
+                          あります
+                        </p>
+                      </div>
+                    )}
                     <div className="bg-surface rounded-2xl border border-line-2 overflow-x-auto">
                       {activeRows.length === 0 ? (
                         <p className="px-6 py-8 text-sm text-ink-3 text-center">進行中の案件がありません</p>

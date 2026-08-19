@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Project, Task, TimeEntry } from "@/lib/types";
 import { formatDuration } from "@/lib/storage";
+import CalendarView from "./CalendarView";
 
 interface Props {
   entries: TimeEntry[];
@@ -23,6 +24,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [editProjectId, setEditProjectId] = useState("");
@@ -175,6 +177,20 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">絞り込み</span>
           <div className="flex items-center gap-3">
+            <div className="flex gap-1 bg-tint rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`text-xs px-2.5 py-1 rounded-md transition-colors ${viewMode === "list" ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+              >
+                リスト
+              </button>
+              <button
+                onClick={() => setViewMode("calendar")}
+                className={`text-xs px-2.5 py-1 rounded-md transition-colors ${viewMode === "calendar" ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+              >
+                カレンダー
+              </button>
+            </div>
             <button
               onClick={handleExportCsv}
               disabled={filtered.length === 0}
@@ -246,6 +262,10 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
         </div>
       </div>
 
+      {viewMode === "calendar" ? (
+        <CalendarView entries={filtered} projects={projects} tasks={tasks} onEdit={openEdit} />
+      ) : (
+      <>
       {/* テーブル */}
       <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
         {completed.length === 0 ? (
@@ -324,6 +344,8 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* 編集モーダル */}
       {editingEntry && (
