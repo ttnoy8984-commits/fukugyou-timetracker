@@ -481,6 +481,44 @@ export function useAppData() {
     }).filter((p) => p.totalSeconds > 0 || p.contractAmount > 0);
   }, [data]);
 
+  // 週次（月曜始まり7日間）の集計。金額は月次の完了案件計上と噛み合わないため時間・タスク内訳のみ返す
+  const getWeeklySummary = useCallback(
+    (weekStart: string) => {
+      const start = new Date(`${weekStart}T00:00:00`);
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const weekEntries = data.entries.filter((e) => {
+        if (e.endTime === null) return false;
+        const d = new Date(`${e.date}T00:00:00`);
+        return d >= start && d < end;
+      });
+      const byProject: Record<string, {
+        seconds: number; name: string; color: string; clientName: string;
+        byTask: Record<string, { taskName: string; seconds: number }>;
+      }> = {};
+      for (const e of weekEntries) {
+        const project = data.projects.find((p) => p.id === e.projectId);
+        const task = data.tasks.find((t) => t.id === e.taskId);
+        if (!project || !e.projectId) continue;
+        if (!byProject[e.projectId]) {
+          byProject[e.projectId] = {
+            seconds: 0, name: project.name, color: project.color,
+            clientName: (data.clients ?? []).find((c) => c.id === project.clientId)?.name ?? "クライアント未設定",
+            byTask: {},
+          };
+        }
+        byProject[e.projectId].seconds += e.durationSeconds;
+        if (task && e.taskId) {
+          if (!byProject[e.projectId].byTask[e.taskId]) {
+            byProject[e.projectId].byTask[e.taskId] = { taskName: task.name, seconds: 0 };
+          }
+          byProject[e.projectId].byTask[e.taskId].seconds += e.durationSeconds;
+        }
+      }
+      return { byProject, entries: weekEntries };
+    },
+    [data]
+  );
+
   const getClientSummaries = useCallback(() => {
     const byClient: Record<string, {
       id: string; name: string; totalSeconds: number; includingTaxAmount: number; projectCount: number;
@@ -534,6 +572,7 @@ export function useAppData() {
     getProjectTaskBreakdown,
     assignEntry,
     getMonthlySummary,
+    getWeeklySummary,
     getProjectSummaries,
     getClientSummaries,
     restoreEntry,

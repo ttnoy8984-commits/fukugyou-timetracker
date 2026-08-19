@@ -229,7 +229,7 @@ export default function ProjectManager({
   return (
     <div className="space-y-4">
       {/* セクション切替 */}
-      <div className="flex gap-1 bg-white border border-line-2 rounded-xl p-1">
+      <div className="flex gap-1 bg-surface border border-line-2 rounded-xl p-1">
         <button onClick={() => setSection("projects")}
           className={`flex-1 py-2 text-sm rounded-lg transition-colors ${section === "projects" ? "bg-accent-strong text-white font-medium" : "text-ink-3 hover:text-ink-2"}`}>
           案件
@@ -253,7 +253,7 @@ export default function ProjectManager({
           </button>
 
           {projects.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
               <p className="text-sm text-ink-3">案件がありません</p>
             </div>
           ) : (
@@ -340,7 +340,7 @@ export default function ProjectManager({
                                 setCompletingProjectId(completingProjectId === p.id ? null : p.id);
                               }}
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                isCompleted ? "bg-emerald-500 border-emerald-500" : "border-line hover:border-accent"
+                                isCompleted ? "bg-good-strong border-good-strong" : "border-line hover:border-accent"
                               }`}
                               title={isCompleted ? "完了を解除" : "完了にする"}
                             >
@@ -348,7 +348,7 @@ export default function ProjectManager({
                             </button>
                             {completingProjectId === p.id && (
                               <div onClick={(e) => e.stopPropagation()}
-                                className="absolute left-0 top-8 z-20 bg-white border border-line rounded-xl shadow-lg p-3 w-56 space-y-2">
+                                className="absolute left-0 top-8 z-20 bg-surface border border-line rounded-xl shadow-lg p-3 w-56 space-y-2">
                                 <label className="text-xs text-ink-3 block">完了日</label>
                                 <input type="date" value={completeDate} onChange={(e) => setCompleteDate(e.target.value)}
                                   className="w-full border border-line rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-accent" />
@@ -409,7 +409,7 @@ export default function ProjectManager({
                                 )}
                                 <div className="flex gap-4 pt-1">
                                   <button onClick={() => openEditProject(p)} className="text-xs text-ink-2 hover:text-ink transition-colors">案件を編集</button>
-                                  <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-red-700 hover:text-red-800 transition-colors">削除</button>
+                                  <button onClick={() => { onDeleteProject(p.id); setExpandedProject(null); }} className="text-xs text-bad hover:text-bad-strong transition-colors">削除</button>
                                 </div>
                               </td>
                             </tr>
@@ -422,7 +422,7 @@ export default function ProjectManager({
 
                 return (
                   <>
-                    <div className="bg-white rounded-2xl border border-line-2 overflow-x-auto">
+                    <div className="bg-surface rounded-2xl border border-line-2 overflow-x-auto">
                       {activeRows.length === 0 ? (
                         <p className="px-6 py-8 text-sm text-ink-3 text-center">進行中の案件がありません</p>
                       ) : (
@@ -438,7 +438,7 @@ export default function ProjectManager({
                           完了した案件（{completedRows.length}件）{showCompleted ? "を隠す" : "を表示"}
                         </button>
                         {showCompleted && (
-                          <div className="bg-white rounded-2xl border border-line-2 overflow-x-auto">
+                          <div className="bg-surface rounded-2xl border border-line-2 overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead>{headerRow}</thead>
                               <tbody>{renderRows(completedRows)}</tbody>
@@ -459,7 +459,7 @@ export default function ProjectManager({
       {section === "tasks" && (
         <>
           {/* タスク一覧 */}
-          <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+          <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
             <div className="px-4 py-3 border-b border-line-2 flex items-center justify-between">
               <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">タスク一覧</span>
               <span className="text-xs text-ink-3">{tasks.length}件</span>
@@ -501,7 +501,7 @@ export default function ProjectManager({
                           <div className="flex items-center gap-3 flex-shrink-0">
                             {sec > 0 && <span className="text-xs font-mono text-ink-3">{formatDuration(sec)}</span>}
                             <button onClick={() => startRenameTask(t)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
-                            <button onClick={() => onDeleteTask(t.id)} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
+                            <button onClick={() => onDeleteTask(t.id)} className="text-xs text-ink-3 hover:text-bad transition-colors">削除</button>
                           </div>
                         </>
                       )}
@@ -542,7 +542,7 @@ export default function ProjectManager({
           </div>
 
           {taskGroups.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-6 border border-line-2 text-center">
               <p className="text-sm text-ink-3">グループがありません</p>
               <p className="text-xs text-ink-3 mt-1">グループを作ってタスクをまとめると、案件登録時に使えます</p>
             </div>
@@ -555,7 +555,7 @@ export default function ProjectManager({
                 const availableTasks = tasks.filter((t) => !taskIds.includes(t.id));
                 const isRenamingGroup = renamingGroupId === g.id;
                 return (
-                  <div key={g.id} className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+                  <div key={g.id} className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
                     {isRenamingGroup ? (
                       <div className="flex items-center gap-2 px-4 py-3">
                         <input
@@ -579,7 +579,7 @@ export default function ProjectManager({
                         </div>
                         <div className="flex items-center gap-3">
                           <button onClick={(e) => { e.stopPropagation(); startRenameGroup(g); }} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
-                          <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
+                          <button onClick={(e) => { e.stopPropagation(); onDeleteTaskGroup(g.id); }} className="text-xs text-ink-3 hover:text-bad transition-colors">削除</button>
                           <span className="text-ink-3 text-xs">{isExpanded ? "▲" : "▼"}</span>
                         </div>
                       </div>
@@ -589,16 +589,16 @@ export default function ProjectManager({
                         {groupTasks.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {groupTasks.map((t) => (
-                              <span key={t.id} className="flex items-center gap-1 bg-white border border-line text-ink-2 text-xs px-3 py-1.5 rounded-full">
+                              <span key={t.id} className="flex items-center gap-1 bg-surface border border-line text-ink-2 text-xs px-3 py-1.5 rounded-full">
                                 {t.name}
-                                <button onClick={() => onRemoveTaskFromGroup(g.id, t.id)} className="text-ink-3 hover:text-red-700 ml-1">✕</button>
+                                <button onClick={() => onRemoveTaskFromGroup(g.id, t.id)} className="text-ink-3 hover:text-bad ml-1">✕</button>
                               </span>
                             ))}
                           </div>
                         )}
                         {addingToGroup === g.id ? (
                           <div className="space-y-2">
-                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-white border border-line rounded-lg">
+                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-surface border border-line rounded-lg">
                               {availableTasks.length === 0 ? (
                                 <span className="text-xs text-ink-3">追加できるタスクがありません</span>
                               ) : (
@@ -650,7 +650,7 @@ export default function ProjectManager({
 
       {/* ===== クライアントセクション ===== */}
       {section === "clients" && (
-        <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+        <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
           <div className="px-4 py-3 border-b border-line-2 flex items-center justify-between">
             <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">クライアント一覧</span>
             <span className="text-xs text-ink-3">{clients.length}件</span>
@@ -684,7 +684,7 @@ export default function ProjectManager({
                         </div>
                         <div className="flex items-center gap-3">
                           <button onClick={() => startRenameClient(c)} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">編集</button>
-                          <button onClick={() => onDeleteClient(c.id)} className="text-xs text-ink-3 hover:text-red-700 transition-colors">削除</button>
+                          <button onClick={() => onDeleteClient(c.id)} className="text-xs text-ink-3 hover:text-bad transition-colors">削除</button>
                         </div>
                       </>
                     )}
@@ -709,7 +709,7 @@ export default function ProjectManager({
       {/* モーダル */}
       {modal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={closeModal}>
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-surface rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
 
             {modal === "project" && (
               <>
@@ -721,9 +721,9 @@ export default function ProjectManager({
                     className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                   <div className="flex bg-line-2 rounded-xl p-1">
                     <button type="button" onClick={() => setTaxIncluded(true)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
                     <button type="button" onClick={() => setTaxIncluded(false)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
                   </div>
                 </div>
                 {addingClientInline ? (
@@ -777,7 +777,7 @@ export default function ProjectManager({
                         return (
                           <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-white text-ink-2 border-line hover:border-accent"
+                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-surface text-ink-2 border-line hover:border-accent"
                             }`}>
                             {checked ? "✓ " : ""}{t.name}
                           </button>
@@ -818,9 +818,9 @@ export default function ProjectManager({
                     className="flex-1 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
                   <div className="flex bg-line-2 rounded-xl p-1">
                     <button type="button" onClick={() => setTaxIncluded(true)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${taxIncluded ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3"}`}>税込</button>
                     <button type="button" onClick={() => setTaxIncluded(false)}
-                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-white text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
+                      className={`px-3 py-2 text-xs rounded-lg transition-colors ${!taxIncluded ? "bg-surface text-ink font-medium shadow-sm" : "text-ink-3"}`}>税抜</button>
                   </div>
                 </div>
                 {addingClientInline ? (
@@ -874,7 +874,7 @@ export default function ProjectManager({
                         return (
                           <button key={t.id} type="button" onClick={() => toggleProjectTask(t.id)}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-white text-ink-2 border-line hover:border-accent"
+                              checked ? "bg-accent-strong text-white border-accent-strong" : "bg-surface text-ink-2 border-line hover:border-accent"
                             }`}>
                             {checked ? "✓ " : ""}{t.name}
                           </button>

@@ -23,6 +23,11 @@ interface ClientSummary {
   projectCount: number; effectiveRate: number;
 }
 
+interface WeekProjectSummary {
+  seconds: number; name: string; color: string; clientName: string;
+  byTask: Record<string, TaskSummary>;
+}
+
 interface Props {
   getMonthlySummary: (year: number, month: number) => {
     byProject: Record<string, ProjectSummary>;
@@ -31,12 +36,37 @@ interface Props {
     completedContractTotalExcludingTax: number;
     completedCount: number;
   };
+  getWeeklySummary: (weekStart: string) => {
+    byProject: Record<string, WeekProjectSummary>;
+    entries: { date: string; durationSeconds: number }[];
+  };
   getProjectSummaries: () => ProjectTotal[];
   getClientSummaries: () => ClientSummary[];
 }
 
-type ReportTab = "monthly" | "yearly" | "projects" | "clients";
+type ReportTab = "weekly" | "monthly" | "yearly" | "projects" | "clients";
 const TARGET_RATE_KEY = "fukugyou_target_rate";
+
+// その週の月曜日（YYYY-MM-DD）を返す
+function mondayOf(d: Date): string {
+  const day = d.getDay(); // 0=日, 1=月, ...
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatWeekRange(weekStart: string): string {
+  const start = new Date(`${weekStart}T00:00:00`);
+  const end = new Date(`${addDays(weekStart, 6)}T00:00:00`);
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+  return `${fmt(start)}〜${fmt(end)}`;
+}
 
 function hours(seconds: number) {
   return `${(seconds / 3600).toFixed(1)}h`;
@@ -53,19 +83,20 @@ function targetRateTone(actual: number, target: number | null): "neutral" | "goo
   return actual >= target ? "good" : "bad";
 }
 
-// 前月との比較。前月の実績がない場合は比較しようがないので出さない
-function momDelta(curr: number, prev: number): { text: string; tone: "good" | "bad" | "neutral" } | null {
+// 前月・前週などとの比較。実績がない場合は比較しようがないので出さない
+function periodDelta(curr: number, prev: number, label: string): { text: string; tone: "good" | "bad" | "neutral" } | null {
   if (prev <= 0) return null;
   const pct = Math.round(((curr - prev) / prev) * 100);
-  if (pct === 0) return { text: "先月と同水準", tone: "neutral" };
+  if (pct === 0) return { text: `${label}と同水準`, tone: "neutral" };
   const sign = pct > 0 ? "+" : "";
-  return { text: `先月比 ${sign}${pct}%`, tone: pct > 0 ? "good" : "bad" };
+  return { text: `${label}比 ${sign}${pct}%`, tone: pct > 0 ? "good" : "bad" };
 }
 
-export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, getClientSummaries }: Props) {
+export default function MonthlyReport({ getMonthlySummary, getWeeklySummary, getProjectSummaries, getClientSummaries }: Props) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [weekStart, setWeekStart] = useState(() => mondayOf(now));
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [reportTab, setReportTab] = useState<ReportTab>("monthly");
   const [targetRate, setTargetRate] = useState<number | null>(null);
@@ -91,6 +122,48 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
 
   const years = [now.getFullYear() - 1, now.getFullYear()];
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  // ===== 週次 =====
+  const { byProject: weekByProject, entries: weekEntries } = getWeeklySummary(weekStart);
+  const weekRows = Object.entries(weekByProject).sort((a, b) => b[1].seconds - a[1].seconds);
+  const weekTotalSeconds = weekRows.reduce((s, [, r]) => s + r.seconds, 0);
+
+  const weekDayLabels = ["月", "火", "水", "木", "金", "土", "日"];
+  const weekDailySeconds: Record<string, number> = {};
+  weekEntries.forEach((e) => {
+    weekDailySeconds[e.date] = (weekDailySeconds[e.date] ?? 0) + e.durationSeconds;
+  });
+  const weekDailyBars: TimeBar[] = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStart, i);
+    return {
+      key: date,
+      label: weekDayLabels[i],
+      seconds: weekDailySeconds[date] ?? 0,
+      muted: i >= 5, // 土日は淡く
+    };
+  });
+  const weekWorkedDays = weekDailyBars.filter((d) => d.seconds > 0).length;
+
+  const weekProjectSlices = foldToTop(
+    weekRows,
+    ([, r]) => r.seconds, ([, r]) => r.name
+  );
+  const weekTaskTotals: Record<string, number> = {};
+  weekRows.forEach(([, r]) => {
+    Object.values(r.byTask).forEach((t) => {
+      weekTaskTotals[t.taskName] = (weekTaskTotals[t.taskName] ?? 0) + t.seconds;
+    });
+  });
+  const weekTaskSlices: Slice[] = foldToTop(
+    Object.entries(weekTaskTotals),
+    ([, sec]) => sec, ([name]) => name
+  );
+
+  // 先週比
+  const prevWeekStart = addDays(weekStart, -7);
+  const prevWeekSummary = getWeeklySummary(prevWeekStart);
+  const prevWeekTotalSeconds = Object.values(prevWeekSummary.byProject).reduce((s, r) => s + r.seconds, 0);
+  const weekTotalSecondsDelta = periodDelta(weekTotalSeconds, prevWeekTotalSeconds, "先週");
 
   // ===== 月次 =====
   const { byProject, entries: monthEntries, completedContractTotal, completedContractTotalExcludingTax, completedCount } = getMonthlySummary(year, month);
@@ -136,8 +209,8 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
   const prevMonthDate = new Date(year, month - 2, 1);
   const prevSummary = getMonthlySummary(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1);
   const prevTotalSeconds = Object.values(prevSummary.byProject).reduce((s, r) => s + r.seconds, 0);
-  const totalSecondsDelta = momDelta(totalSeconds, prevTotalSeconds);
-  const contractTotalDelta = momDelta(completedContractTotal, prevSummary.completedContractTotal);
+  const totalSecondsDelta = periodDelta(totalSeconds, prevTotalSeconds, "先月");
+  const contractTotalDelta = periodDelta(completedContractTotal, prevSummary.completedContractTotal, "先月");
 
   // ===== 年次 =====
   const monthlyBreakdown = months.map((m) => {
@@ -187,15 +260,15 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
     // 目標時給が設定されていればそれを基準に、なければ最高時給案件との相対比較で判定する
     if (targetRate) {
       const ratio = rate / targetRate;
-      if (ratio >= 1) return "text-emerald-700";
-      if (ratio >= 0.7) return "text-amber-700";
-      return "text-red-700";
+      if (ratio >= 1) return "text-good";
+      if (ratio >= 0.7) return "text-warn";
+      return "text-bad";
     }
     if (max === 0) return "text-ink-3";
     const ratio = rate / max;
-    if (ratio >= 0.8) return "text-emerald-700";
-    if (ratio >= 0.5) return "text-amber-700";
-    return "text-red-700";
+    if (ratio >= 0.8) return "text-good";
+    if (ratio >= 0.5) return "text-warn";
+    return "text-bad";
   }
 
   // ===== クライアント別 =====
@@ -203,6 +276,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
   const maxClientSeconds = clientSummaries[0]?.totalSeconds ?? 0;
 
   const tabs: { key: ReportTab; label: string }[] = [
+    { key: "weekly", label: "週次" },
     { key: "monthly", label: "月次" },
     { key: "yearly", label: "年次" },
     { key: "projects", label: "案件分析" },
@@ -216,12 +290,12 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
         <div className="flex gap-1 bg-line-2 rounded-xl p-1 w-fit">
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setReportTab(t.key)}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-white text-accent-text font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}>
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${reportTab === t.key ? "bg-surface text-accent-text font-medium shadow-sm" : "text-ink-3 hover:text-ink-2"}`}>
               {t.label}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 text-xs text-ink-3 bg-white border border-line-2 rounded-xl px-3 py-2">
+        <label className="flex items-center gap-2 text-xs text-ink-3 bg-surface border border-line-2 rounded-xl px-3 py-2">
           目標時給
           <input
             type="number"
@@ -234,6 +308,93 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
           円/h
         </label>
       </div>
+
+      {/* ===== 週次 ===== */}
+      {reportTab === "weekly" && (
+        <>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setWeekStart(addDays(weekStart, -7))}
+              className="border border-line rounded-xl px-3 py-2.5 text-sm text-ink-2 hover:bg-tint transition-colors"
+            >
+              ←
+            </button>
+            <div className="border border-line rounded-xl px-4 py-2.5 text-sm text-ink flex-1 text-center">
+              {formatWeekRange(weekStart)}
+            </div>
+            <button
+              onClick={() => setWeekStart(addDays(weekStart, 7))}
+              className="border border-line rounded-xl px-3 py-2.5 text-sm text-ink-2 hover:bg-tint transition-colors"
+            >
+              →
+            </button>
+            {weekStart !== mondayOf(now) && (
+              <button
+                onClick={() => setWeekStart(mondayOf(now))}
+                className="text-xs text-accent-text hover:text-accent-deep whitespace-nowrap"
+              >
+                今週
+              </button>
+            )}
+          </div>
+
+          {weekRows.length === 0 ? (
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
+              <p className="text-sm text-ink-3">この週の記録はありません</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <StatTile label="週間作業時間" value={formatDuration(weekTotalSeconds)} accent sub={`${weekRows.length}案件`} delta={weekTotalSecondsDelta ?? undefined} />
+                <StatTile label="稼働日あたり" value={weekWorkedDays > 0 ? hours(weekTotalSeconds / weekWorkedDays) : "—"} sub={`稼働${weekWorkedDays}日`} />
+                <StatTile label="1日平均" value={hours(weekTotalSeconds / 7)} sub="7日換算" />
+              </div>
+
+              <div className="bg-surface rounded-2xl border border-line-2 p-5">
+                <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">曜日別の作業時間</h2>
+                <TimeBars data={weekDailyBars} formatValue={formatDuration} />
+                <p className="text-xs text-ink-3 mt-3">淡い列は土日です</p>
+              </div>
+
+              <div className="grid lg:grid-cols-2 gap-3">
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">案件別の時間比率</h2>
+                  <DonutChart slices={weekProjectSlices} formatValue={hours} centerLabel="合計" />
+                </div>
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
+                  <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
+                  <DonutChart slices={weekTaskSlices} formatValue={hours} centerLabel="合計" />
+                </div>
+              </div>
+
+              <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
+                <div className="px-6 py-4 border-b border-line-2">
+                  <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">案件別の詳細</h2>
+                </div>
+                <div className="divide-y divide-line-2">
+                  {weekRows.map(([projectId, r], ri) => (
+                    <div key={projectId} className="px-6 py-4 space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: rankColor(ri) }} />
+                          <span className="text-sm font-medium text-ink truncate">{r.name}</span>
+                        </div>
+                        <span className="text-sm font-mono text-ink-2 flex-shrink-0">{formatDuration(r.seconds)}</span>
+                      </div>
+                      <div className="w-full bg-line-2 rounded-full h-1">
+                        <div className="h-1 rounded-full" style={{
+                          backgroundColor: rankColor(ri),
+                          width: weekTotalSeconds > 0 ? `${(r.seconds / weekTotalSeconds) * 100}%` : "0%",
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       {/* ===== 月次 ===== */}
       {reportTab === "monthly" && (
@@ -250,7 +411,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
           </div>
 
           {rows.length === 0 && completedCount === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
               <p className="text-sm text-ink-3">この月の記録はありません</p>
             </div>
           ) : (
@@ -268,7 +429,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
               </div>
 
               {/* 日別の作業時間 */}
-              <div className="bg-white rounded-2xl border border-line-2 p-5">
+              <div className="bg-surface rounded-2xl border border-line-2 p-5">
                 <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">日別の作業時間</h2>
                 <TimeBars
                   data={dailyBars}
@@ -281,18 +442,18 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
 
               {/* 比率チャート */}
               <div className="grid lg:grid-cols-2 gap-3">
-                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
                   <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">案件別の時間比率</h2>
                   <DonutChart slices={monthProjectSlices} formatValue={hours} centerLabel="合計" />
                 </div>
-                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
                   <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
                   <DonutChart slices={monthTaskSlices} formatValue={hours} centerLabel="合計" />
                 </div>
               </div>
 
               {/* 案件別（表としても機能する詳細） */}
-              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
                 <div className="px-6 py-4 border-b border-line-2">
                   <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">案件別の詳細</h2>
                 </div>
@@ -362,7 +523,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
           </select>
 
           {yearTotalSeconds === 0 && yearCompletedCount === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
               <p className="text-sm text-ink-3">この年の記録はありません</p>
             </div>
           ) : (
@@ -376,7 +537,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
                 <StatTile label="月平均" value={activeMonths > 0 ? hours(yearTotalSeconds / activeMonths) : "—"} sub="稼働月あたり" />
               </div>
 
-              <div className="bg-white rounded-2xl border border-line-2 p-5">
+              <div className="bg-surface rounded-2xl border border-line-2 p-5">
                 <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">月別の作業時間</h2>
                 <TimeBars
                   data={monthlyBreakdown.map((m) => ({
@@ -390,17 +551,17 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
               </div>
 
               <div className="grid lg:grid-cols-2 gap-3">
-                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
                   <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">クライアント別の時間比率</h2>
                   <DonutChart slices={yearClientSlices} formatValue={hours} centerLabel="年間" />
                 </div>
-                <div className="bg-white rounded-2xl border border-line-2 p-5">
+                <div className="bg-surface rounded-2xl border border-line-2 p-5">
                   <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-4">タスク別の時間比率</h2>
                   <DonutChart slices={yearTaskSlices} formatValue={hours} centerLabel="年間" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
                 <div className="px-6 py-4 border-b border-line-2">
                   <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">月別の詳細</h2>
                 </div>
@@ -434,7 +595,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
       {reportTab === "projects" && (
         <>
           {projectSummaries.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
               <p className="text-sm text-ink-3">記録がありません</p>
             </div>
           ) : (
@@ -443,7 +604,7 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
                 時給の高い順。時給は案件の全期間合計時間・税込金額で計算しています。
                 {targetMarkerPct !== null && <> バーの<span className="inline-block w-0.5 h-2.5 bg-ink-3 align-middle mx-0.5" />は目標時給の位置です。</>}
               </p>
-              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
                 <div className="divide-y divide-line-2">
                   {projectSummaries.map((p, i) => {
                     const taskRows = Object.values(p.byTask).sort((a, b) => b.seconds - a.seconds);
@@ -511,13 +672,13 @@ export default function MonthlyReport({ getMonthlySummary, getProjectSummaries, 
       {reportTab === "clients" && (
         <>
           {clientSummaries.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-line-2 text-center">
+            <div className="bg-surface rounded-2xl p-8 border border-line-2 text-center">
               <p className="text-sm text-ink-3">記録がありません</p>
             </div>
           ) : (
             <>
               <p className="text-xs text-ink-3">作業時間が多い順。全期間の合計時間・税込金額で計算しています。</p>
-              <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
                 <div className="divide-y divide-line-2">
                   {clientSummaries.map((c, i) => (
                     <div key={c.id} className="px-6 py-4">

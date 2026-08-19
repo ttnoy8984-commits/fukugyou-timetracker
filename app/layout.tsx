@@ -24,8 +24,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#eb670e",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eb670e" },
+    { media: "(prefers-color-scheme: dark)", color: "#18120d" },
+  ],
 };
+
+// 保存済みのテーマ選択をペイント前に反映し、ライト→ダークのちらつきを防ぐ
+const themeInitScript = `
+try {
+  var t = localStorage.getItem("fukugyou_theme");
+  if (t === "light" || t === "dark") {
+    document.documentElement.setAttribute("data-theme", t);
+  }
+} catch (e) {}
+`;
 
 export default function RootLayout({
   children,
@@ -37,6 +50,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

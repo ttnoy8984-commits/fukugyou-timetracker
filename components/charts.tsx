@@ -110,10 +110,10 @@ export function StatTile({
   /** 前月比などの補助的な差分表示。subとは別行で色付けする */
   delta?: { text: string; tone: "good" | "bad" | "neutral" };
 }) {
-  const subColor = subTone === "good" ? "text-emerald-700" : subTone === "bad" ? "text-red-700" : "text-ink-3";
-  const deltaColor = delta?.tone === "good" ? "text-emerald-700" : delta?.tone === "bad" ? "text-red-700" : "text-ink-3";
+  const subColor = subTone === "good" ? "text-good" : subTone === "bad" ? "text-bad" : "text-ink-3";
+  const deltaColor = delta?.tone === "good" ? "text-good" : delta?.tone === "bad" ? "text-bad" : "text-ink-3";
   return (
-    <div className="bg-white rounded-2xl border border-line-2 px-5 py-4">
+    <div className="bg-surface rounded-2xl border border-line-2 px-5 py-4">
       <p className="text-xs text-ink-3 uppercase tracking-wider mb-1.5">{label}</p>
       <p className={`font-light text-ink ${accent ? "text-2xl font-mono" : "text-2xl"}`}>{value}</p>
       {sub && <p className={`text-xs mt-1 ${subColor}`}>{sub}</p>}
@@ -196,7 +196,11 @@ export function TimeBars({
                     style={{
                       height: `${Math.max(h, d.seconds > 0 ? 2 : 0)}%`,
                       backgroundColor:
-                        hovered === i ? "#a4480a" : d.muted ? "#f0b988" : "#eb670e",
+                        hovered === i
+                          ? "var(--color-accent-deep)"
+                          : d.muted
+                          ? "var(--color-accent-muted)"
+                          : "var(--color-accent)",
                     }}
                   />
                 </div>

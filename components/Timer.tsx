@@ -113,7 +113,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
   return (
     <div className="space-y-4">
       {/* モード切替 */}
-      <div className="flex bg-white border border-line-2 rounded-xl p-1">
+      <div className="flex bg-surface border border-line-2 rounded-xl p-1">
         <button
           onClick={() => setMode("timer")}
           className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
@@ -141,7 +141,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
             return (
               <div
                 key={f.id}
-                className="group flex items-center gap-1 bg-white border border-line-2 rounded-full pl-1 pr-1 py-1 text-xs"
+                className="group flex items-center gap-1 bg-surface border border-line-2 rounded-full pl-1 pr-1 py-1 text-xs"
               >
                 <button
                   onClick={() => handleStartFavorite(f)}
@@ -152,7 +152,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
                 </button>
                 <button
                   onClick={() => onDeleteFavorite(f.id)}
-                  className="text-ink-3 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 flex items-center justify-center flex-shrink-0"
+                  className="text-ink-3 hover:text-bad opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 flex items-center justify-center flex-shrink-0"
                   title="お気に入りから削除"
                 >
                   ×
@@ -164,7 +164,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
       )}
 
       {mode === "timer" ? (
-        <div className="bg-white rounded-2xl p-8 space-y-4 border border-line-2">
+        <div className="bg-surface rounded-2xl p-8 space-y-4 border border-line-2">
           {activeEntry ? (
             <>
               <div className="space-y-1">
@@ -177,10 +177,10 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
                 {activeEntry.note && <p className="text-sm text-ink-3 pl-4">{activeEntry.note}</p>}
               </div>
               <div className="text-center">
-                <div className={`text-6xl font-mono font-light tracking-tight ${isPaused ? "text-amber-700" : "text-ink"}`}>
+                <div className={`text-6xl font-mono font-light tracking-tight ${isPaused ? "text-warn" : "text-ink"}`}>
                   {formatDuration(elapsed)}
                 </div>
-                {isPaused && <p className="text-xs text-amber-700 mt-1">一時停止中</p>}
+                {isPaused && <p className="text-xs text-warn mt-1">一時停止中</p>}
               </div>
               <div className="flex gap-2">
                 <button
@@ -245,7 +245,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-8 space-y-4 border border-line-2">
+        <div className="bg-surface rounded-2xl p-8 space-y-4 border border-line-2">
           <h2 className="text-sm font-medium text-ink-3 uppercase tracking-wider">手入力</h2>
 
           <select
@@ -315,7 +315,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
             className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
           />
 
-          {mError && <p className="text-xs text-red-700">{mError}</p>}
+          {mError && <p className="text-xs text-bad">{mError}</p>}
 
           <button
             onClick={handleManualAdd}
@@ -334,7 +334,7 @@ export default function Timer({ projects, tasks, favorites, activeEntry, elapsed
       {/* 停止後の案件割り当てモーダル */}
       {assignEntryId && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-surface rounded-2xl w-full max-w-md p-6 space-y-4">
             <div>
               <h3 className="text-base font-semibold text-ink">作業を記録しました</h3>
               <p className="text-xs text-ink-3 mt-1">案件とタスクを割り当ててください（後でログから編集もできます）</p>

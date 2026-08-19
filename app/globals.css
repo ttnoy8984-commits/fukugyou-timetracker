@@ -5,6 +5,11 @@
  * オレンジは白文字だと 3.24:1 で本文には使えないため、ボタン・タブなど
  * 白文字を乗せる面は20%黒を混ぜた accent-strong (4.8:1) を使う。
  * 本文の文字色（ink系）はネイビー系だと浮いて見えたため、元のニュートラルな濃色に戻した。
+ *
+ * ダークモードは「システム設定 / ライト / ダーク」の3値。システム設定時はprefers-color-schemeに従い、
+ * 明示的に選んだ場合は<html data-theme="light|dark">で上書きする。
+ * トークン名は変更しない（Tailwindの予約語と衝突するとutilityクラスが壊れるため。過去に
+ * --color-base が text-base の font-size ユーティリティと衝突した事故があり、page に改名した経緯がある）。
  */
 @theme {
   --color-page: #fefaf8;          /* ページ背景（オレンジをごく薄く） */
@@ -24,15 +29,96 @@
   --color-accent-text: #bc520b;   /* アクセント色の文字 4.8:1 */
   --color-accent-50: #fef4ee;     /* 淡い背景 */
   --color-accent-100: #fdede2;
+  --color-accent-muted: #f0b988;  /* グラフの土日バー等、控えめに見せたい塗り */
 
   --color-highlight: #2a3582;         /* 差し色（グラフの副系統・強調） */
   --color-highlight-strong: #2a3582;  /* 白文字を乗せる面 10.9:1（そのまま使える） */
   --color-highlight-tint: #9fa4c7;    /* 淡色（グラフの副次列など） */
+
+  /* 状態色（良い/悪い/注意）。Tailwind標準スケール(emerald-700等)は@themeの再定義が効かないため
+     独自トークンとして持ち、ダークモードでも同じ仕組みで切り替えられるようにする */
+  --color-good: #047857;
+  --color-good-strong: #059669;   /* 完了チェックボックスの塗り。白文字/白アイコンを乗せる用途 */
+  --color-bad: #b91c1c;
+  --color-bad-strong: #991b1b;    /* hover等の強調 */
+  --color-warn: #b45309;
 }
 
 :root {
   --background: #fefaf8;
   --foreground: #082627;
+}
+
+/* システム設定がダークで、かつ明示的に「ライト」を選んでいない場合 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-page: #18120d;
+    --color-surface: #241c16;
+
+    --color-ink: #f3ece4;
+    --color-ink-2: #c6b7aa;
+    --color-ink-3: #93857a;
+
+    --color-line: #3a2f26;
+    --color-line-2: #2c241d;
+    --color-tint: #2a221b;
+
+    --color-accent: #f0793a;
+    --color-accent-strong: #bc520b;
+    --color-accent-deep: #d97a3e;
+    --color-accent-text: #f0864f;
+    --color-accent-50: #2b1a10;
+    --color-accent-100: #3a2515;
+    --color-accent-muted: #6b4530;
+
+    --color-highlight: #8f9bdb;
+    --color-highlight-strong: #4551a8;
+    --color-highlight-tint: #3c4270;
+
+    --color-good: #4ade80;
+    --color-good-strong: #059669;
+    --color-bad: #f87171;
+    --color-bad-strong: #fca5a5;
+    --color-warn: #fbbf24;
+
+    --background: #18120d;
+    --foreground: #f3ece4;
+  }
+}
+
+/* 明示的に「ダーク」を選んだ場合（システム設定に関わらず強制） */
+:root[data-theme="dark"] {
+  --color-page: #18120d;
+  --color-surface: #241c16;
+
+  --color-ink: #f3ece4;
+  --color-ink-2: #c6b7aa;
+  --color-ink-3: #93857a;
+
+  --color-line: #3a2f26;
+  --color-line-2: #2c241d;
+  --color-tint: #2a221b;
+
+  --color-accent: #f0793a;
+  --color-accent-strong: #bc520b;
+  --color-accent-deep: #d97a3e;
+  --color-accent-text: #f0864f;
+  --color-accent-50: #2b1a10;
+  --color-accent-100: #3a2515;
+  --color-accent-muted: #6b4530;
+
+  --color-highlight: #8f9bdb;
+  --color-highlight-strong: #4551a8;
+  --color-highlight-tint: #3c4270;
+
+  --color-good: #4ade80;
+  --color-good-strong: #059669;
+  --color-bad: #f87171;
+  --color-bad-strong: #fca5a5;
+  --color-warn: #fbbf24;
+
+  --background: #18120d;
+  --foreground: #f3ece4;
 }
 
 body {
@@ -43,17 +129,17 @@ body {
 }
 
 input, select, textarea {
-  color: #082627 !important;
-  -webkit-text-fill-color: #082627 !important;
-  background-color: #ffffff !important;
+  color: var(--foreground) !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  background-color: var(--color-surface) !important;
 }
 
 input::placeholder, select::placeholder, textarea::placeholder {
-  color: #6b7d7d !important;
-  -webkit-text-fill-color: #6b7d7d !important;
+  color: var(--color-ink-3) !important;
+  -webkit-text-fill-color: var(--color-ink-3) !important;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #eb670e !important;
+  border-color: var(--color-accent) !important;
   outline: none;
 }

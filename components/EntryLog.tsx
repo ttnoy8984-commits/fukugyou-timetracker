@@ -171,7 +171,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
   return (
     <>
       {/* フィルターバー */}
-      <div className="bg-white rounded-2xl border border-line-2 p-4 space-y-3">
+      <div className="bg-surface rounded-2xl border border-line-2 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">絞り込み</span>
           <div className="flex items-center gap-3">
@@ -247,7 +247,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
       </div>
 
       {/* テーブル */}
-      <div className="bg-white rounded-2xl border border-line-2 overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-line-2 overflow-hidden">
         {completed.length === 0 ? (
           <div className="p-8 text-center text-sm text-ink-3">
             {activeFilters > 0 ? "条件に一致する記録がありません" : "記録がありません"}
@@ -298,13 +298,13 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
                       <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{task?.name ?? "—"}</td>
                       <td className="px-4 py-3 text-ink-3 text-xs max-w-[120px] truncate">{e.note || "—"}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">
-                        {e.pausedSeconds ? <span className="text-amber-700">{formatDuration(e.pausedSeconds)}</span> : <span className="text-ink-3">—</span>}
+                        {e.pausedSeconds ? <span className="text-warn">{formatDuration(e.pausedSeconds)}</span> : <span className="text-ink-3">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-ink-2 text-xs whitespace-nowrap">{formatDuration(e.durationSeconds)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           <button onClick={() => openEdit(e)} className="text-xs text-ink-3 hover:text-ink-2">編集</button>
-                          <button onClick={() => onDelete(e.id)} className="text-xs text-ink-3 hover:text-red-700">削除</button>
+                          <button onClick={() => onDelete(e.id)} className="text-xs text-ink-3 hover:text-bad">削除</button>
                         </div>
                       </td>
                     </tr>
@@ -328,7 +328,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
       {/* 編集モーダル */}
       {editingEntry && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setEditingEntry(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-surface rounded-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-ink">ログを編集</h3>
             <div>
               <label className="text-xs text-ink-3 mb-1 block">案件</label>
@@ -377,7 +377,7 @@ export default function EntryLog({ entries, projects, tasks, onDelete, onUpdate 
             </div>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="メモ（任意）"
               className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent" />
-            {error && <p className="text-xs text-red-700">{error}</p>}
+            {error && <p className="text-xs text-bad">{error}</p>}
             <div className="flex gap-2">
               <button onClick={() => setEditingEntry(null)} className="flex-1 border border-line text-ink-2 text-sm font-medium py-3 rounded-xl hover:bg-tint transition-colors">キャンセル</button>
               <button onClick={handleSave} className="flex-1 bg-accent-strong hover:bg-accent-deep text-white text-sm font-medium py-3 rounded-xl transition-colors">保存</button>
