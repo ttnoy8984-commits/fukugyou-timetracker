@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useAppData } from "@/lib/useAppData";
 import { loadSeedData } from "@/lib/seed";
 import { Favorite, Project, TimeEntry } from "@/lib/types";
@@ -36,7 +36,7 @@ export default function Home() {
     data, activeEntry, elapsed, isPaused,
     addProject, updateProject, deleteProject, toggleProjectComplete, addTask, deleteTask, addTaskGroup, deleteTaskGroup, addTasksToGroup, removeTaskFromGroup, renameTask, renameTaskGroup, addClient, renameClient, deleteClient,
     startTimer, pauseTimer, resumeTimer, stopTimer, addManualEntry, assignEntry, updateEntry, deleteEntry, getProjectTotalSeconds, getTaskTotalSeconds, getProjectTaskBreakdown, getMonthlySummary, getProjectSummaries, getClientSummaries,
-    restoreEntry, restoreProject, addFavorite, deleteFavorite,
+    restoreEntry, restoreProject, addFavorite, deleteFavorite, importData,
   } = useAppData();
 
   const [tab, setTab] = useState<Tab>("timer");
@@ -44,6 +44,7 @@ export default function Home() {
   const [privacy, setPrivacy] = useState(false);
   const [undoToast, setUndoToast] = useState<PendingUndo | null>(null);
   const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   // 削除の取り消し用トースト。数秒で自動的に消える
   // undo実行時は最新のrestoreEntry/restoreProject（=最新のdataを閉じ込めた関数）を使うため、
@@ -54,19 +55,70 @@ export default function Home() {
     undoTimeoutRef.current = setTimeout(() => setUndoToast(null), 7000);
   }
 
+  // 削除前に一度確認を挟む。削除後の取り消しトーストはそのまま二重の保険として残す
   function handleDeleteEntry(id: string) {
     const entry = data.entries.find((e) => e.id === id);
+    if (!entry) return;
+    if (!window.confirm("このログを削除しますか？")) return;
     deleteEntry(id);
-    if (entry) showUndo({ type: "entry", message: "ログを削除しました", entry });
+    showUndo({ type: "entry", message: "ログを削除しました", entry });
   }
 
   function handleDeleteProject(id: string) {
     const project = data.projects.find((p) => p.id === id);
     if (!project) return;
+    if (!window.confirm(`「${project.name}」を削除しますか？紐づくログもすべて削除されます`)) return;
     const relatedEntries = data.entries.filter((e) => e.projectId === id);
     const relatedFavorites = data.favorites.filter((f) => f.projectId === id);
     deleteProject(id);
     showUndo({ type: "project", message: `「${project.name}」を削除しました`, project, entries: relatedEntries, favorites: relatedFavorites });
+  }
+
+  // 全データのバックアップ（JSON）。localStorageのみの運用なのでブラウザ削除等に備えた保険
+  function handleExportData() {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const today = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `時給ノート_バックアップ_${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setShowSeed(false);
+  }
+
+  function handleImportClick() {
+    if (activeEntry) {
+      alert("タイマー実行中はインポートできません。先に停止してください。");
+      return;
+    }
+    setShowSeed(false);
+    importFileRef.current?.click();
+  }
+
+  function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 同じファイルを連続で選び直せるようにリセット
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result as string);
+        if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.entries)) {
+          alert("バックアップファイルの形式が正しくありません");
+          return;
+        }
+        if (!window.confirm("現在のデータをすべて上書きします。よろしいですか？")) return;
+        importData(parsed);
+        alert("データを復元しました");
+      } catch {
+        alert("ファイルの読み込みに失敗しました");
+      }
+    };
+    reader.readAsText(file);
   }
 
   function handleLoadSeed() {
@@ -188,8 +240,28 @@ export default function Home() {
                   >
                     サンプルデータを読み込む
                   </button>
+                  <div className="my-1 border-t border-line" />
+                  <button
+                    onClick={handleExportData}
+                    className="w-full text-left text-xs text-ink-2 hover:text-ink px-3 py-2 rounded-lg hover:bg-tint transition-colors"
+                  >
+                    データをバックアップ（JSON）
+                  </button>
+                  <button
+                    onClick={handleImportClick}
+                    className="w-full text-left text-xs text-ink-2 hover:text-ink px-3 py-2 rounded-lg hover:bg-tint transition-colors"
+                  >
+                    バックアップから復元
+                  </button>
                 </div>
               )}
+              <input
+                ref={importFileRef}
+                type="file"
+                accept="application/json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
             </div>
           </div>
         </div>

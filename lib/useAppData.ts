@@ -13,6 +13,7 @@ import {
   createTask,
   createTaskGroup,
   loadData,
+  normalizeData,
   saveData,
 } from "./storage";
 
@@ -48,6 +49,14 @@ export function useAppData() {
     setData(next);
     saveData(next);
   }, []);
+
+  // バックアップファイル（JSON）からの復元。旧形式も loadData と同じロジックで正規化する
+  const importData = useCallback(
+    (raw: Record<string, unknown>) => {
+      persist(normalizeData(raw));
+    },
+    [persist]
+  );
 
   const addProject = useCallback(
     (
@@ -531,5 +540,6 @@ export function useAppData() {
     restoreProject,
     addFavorite,
     deleteFavorite,
+    importData,
   };
 }

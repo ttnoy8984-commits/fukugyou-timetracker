@@ -5,59 +5,63 @@ export const TAX_RATE = 0.1;
 
 const defaultData: AppData = { projects: [], tasks: [], taskGroups: [], clients: [], entries: [], favorites: [] };
 
+// 保存データ（localStorage・インポートファイル共通）を現在の形式に正規化する。
+// 旧バージョンのデータ（hourlyRate単価制、案件紐付けタスクなど）もここで新形式に変換する
+export function normalizeData(parsed: Record<string, unknown>): AppData {
+  // 旧データ（hourlyRate）を新形式（contractAmount）に変換。taxIncluded等のデフォルト値も補完
+  const projects = ((parsed.projects as Record<string, unknown>[]) ?? []).map((p) => ({
+    ...p,
+    contractAmount: p.contractAmount ?? p.hourlyRate ?? 0,
+    taxIncluded: typeof p.taxIncluded === "boolean" ? p.taxIncluded : true,
+    clientId: p.clientId ?? null,
+    completedAt: p.completedAt ?? null,
+    taskIds: Array.isArray(p.taskIds) ? p.taskIds : [],
+  }));
+
+  // 旧タスク（projectId付き）を共通タスクに昇格。名前重複は1つに統合しつつentryのtaskIdを付け替え
+  const rawTasks: (Task & { projectId?: string })[] = (parsed.tasks as (Task & { projectId?: string })[]) ?? [];
+  const nameToId = new Map<string, string>();
+  const idRemap = new Map<string, string>(); // 旧ID → 新（代表）ID
+  const tasks: Task[] = [];
+  for (const t of rawTasks) {
+    const key = t.name.trim();
+    if (nameToId.has(key)) {
+      idRemap.set(t.id, nameToId.get(key)!);
+    } else {
+      nameToId.set(key, t.id);
+      const { projectId: _p, ...rest } = t;
+      void _p;
+      tasks.push(rest);
+    }
+  }
+  const entries = ((parsed.entries as Record<string, unknown>[]) ?? []).map((e) => ({
+    ...e,
+    taskId: e.taskId && idRemap.has(e.taskId as string) ? idRemap.get(e.taskId as string) : e.taskId,
+  }));
+
+  const taskGroups = ((parsed.taskGroups as Record<string, unknown>[]) ?? []).map((g) => ({
+    ...g,
+    taskIds: Array.isArray(g.taskIds) ? g.taskIds : [],
+  }));
+
+  return {
+    ...defaultData,
+    ...parsed,
+    projects,
+    tasks,
+    taskGroups,
+    clients: (parsed.clients as Client[]) ?? [],
+    entries,
+    favorites: Array.isArray(parsed.favorites) ? (parsed.favorites as Favorite[]) : [],
+  } as AppData;
+}
+
 export function loadData(): AppData {
   if (typeof window === "undefined") return defaultData;
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultData;
-    const parsed = JSON.parse(raw);
-
-    // 旧データ（hourlyRate）を新形式（contractAmount）に変換。taxIncluded等のデフォルト値も補完
-    const projects = (parsed.projects ?? []).map((p: Record<string, unknown>) => ({
-      ...p,
-      contractAmount: p.contractAmount ?? p.hourlyRate ?? 0,
-      taxIncluded: typeof p.taxIncluded === "boolean" ? p.taxIncluded : true,
-      clientId: p.clientId ?? null,
-      completedAt: p.completedAt ?? null,
-      taskIds: Array.isArray(p.taskIds) ? p.taskIds : [],
-    }));
-
-    // 旧タスク（projectId付き）を共通タスクに昇格。名前重複は1つに統合しつつentryのtaskIdを付け替え
-    const rawTasks: (Task & { projectId?: string })[] = parsed.tasks ?? [];
-    const nameToId = new Map<string, string>();
-    const idRemap = new Map<string, string>(); // 旧ID → 新（代表）ID
-    const tasks: Task[] = [];
-    for (const t of rawTasks) {
-      const key = t.name.trim();
-      if (nameToId.has(key)) {
-        idRemap.set(t.id, nameToId.get(key)!);
-      } else {
-        nameToId.set(key, t.id);
-        const { projectId: _p, ...rest } = t;
-        void _p;
-        tasks.push(rest);
-      }
-    }
-    const entries = (parsed.entries ?? []).map((e: Record<string, unknown>) => ({
-      ...e,
-      taskId: e.taskId && idRemap.has(e.taskId as string) ? idRemap.get(e.taskId as string) : e.taskId,
-    }));
-
-    const taskGroups = (parsed.taskGroups ?? []).map((g: Record<string, unknown>) => ({
-      ...g,
-      taskIds: Array.isArray(g.taskIds) ? g.taskIds : [],
-    }));
-
-    return {
-      ...defaultData,
-      ...parsed,
-      projects,
-      tasks,
-      taskGroups,
-      clients: parsed.clients ?? [],
-      entries,
-      favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
-    };
+    return normalizeData(JSON.parse(raw));
   } catch {
     return defaultData;
   }
