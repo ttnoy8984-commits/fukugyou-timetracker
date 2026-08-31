@@ -448,7 +448,10 @@ export function useAppData() {
       const completedThisMonth = data.projects.filter(
         (p) => p.completedAt && p.completedAt.slice(0, 7) === prefix
       );
-      const completedContractTotal = completedThisMonth.reduce((sum, p) => sum + p.contractAmount, 0);
+      // 税抜契約の案件をそのまま合算すると税込合計と一致してしまうため、必ず税込換算してから合算する
+      const completedContractTotal = completedThisMonth.reduce(
+        (sum, p) => sum + calcAmountIncludingTax(p.contractAmount, p.taxIncluded), 0
+      );
       const completedContractTotalExcludingTax = completedThisMonth.reduce(
         (sum, p) => sum + calcAmountExcludingTax(p.contractAmount, p.taxIncluded), 0
       );
